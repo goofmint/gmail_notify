@@ -179,6 +179,39 @@ describe('background index', () => {
     expect(h.createAlarm).toHaveBeenCalledWith(ALARM_NAME, { periodInMinutes: 5, delayInMinutes: 5 });
   });
 
+  it('設定変更が連続しても、アラーム登録は順番に実行し最後に保存された間隔が反映される', async () => {
+    const listener = only(h.listeners.onChanged);
+    let resolveFirst: (settings: Settings) => void = () => undefined;
+    const first = new Promise<Settings>((resolve) => {
+      resolveFirst = resolve;
+    });
+    h.loadSettings.mockReturnValueOnce(first).mockResolvedValueOnce({ ...SETTINGS, intervalMinutes: 10 });
+
+    listener({ intervalMinutes: storageChange() }, 'sync');
+    listener({ intervalMinutes: storageChange() }, 'sync');
+
+    // 先の処理が終わるまで、後の処理は設定を読まない。
+    await vi.waitFor(() => expect(h.loadSettings).toHaveBeenCalledTimes(1));
+    expect(h.createAlarm).not.toHaveBeenCalled();
+
+    resolveFirst({ ...SETTINGS, intervalMinutes: 1 });
+    await vi.waitFor(() => expect(h.runCheck).toHaveBeenCalledTimes(2));
+    expect(h.createAlarm.mock.calls.map(([, info]) => info.periodInMinutes)).toEqual([1, 10]);
+  });
+
+  it('アラーム登録が失敗しても、後続の登録は実行される', async () => {
+    const listener = only(h.listeners.onChanged);
+    h.loadSettings.mockRejectedValueOnce(new Error('設定の読み込みに失敗'));
+
+    listener({ intervalMinutes: storageChange() }, 'sync');
+    await expectLogged('設定の読み込みに失敗');
+    expect(h.runCheck).not.toHaveBeenCalled();
+
+    listener({ intervalMinutes: storageChange() }, 'sync');
+    await vi.waitFor(() => expect(h.runCheck).toHaveBeenCalledTimes(1));
+    expect(h.createAlarm).toHaveBeenCalledWith(ALARM_NAME, { periodInMinutes: 5, delayInMinutes: 5 });
+  });
+
   it('sync 以外の変更や設定以外のキーの変更は無視する', async () => {
     const listener = only(h.listeners.onChanged);
     listener({ result: storageChange() }, 'local');

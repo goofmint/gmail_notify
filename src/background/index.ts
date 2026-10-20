@@ -23,13 +23,24 @@ function report(promise: Promise<void>): void {
   });
 }
 
+/**
+ * アラーム登録の直列化用キュー。initialize() と storage.onChanged が同時に scheduleAlarm() を
+ * 呼ぶと、古い設定を読んだ処理が後から登録して新しい間隔を上書きしうるため、順番に実行する。
+ * 失敗しても後続を止めないよう、キュー自体は常に resolve する。
+ */
+let alarmQueue: Promise<void> = Promise.resolve();
+
 /** 設定のチェック間隔でアラームを登録する。同じ名前で登録し直すと置き換わる。 */
-async function scheduleAlarm(): Promise<void> {
-  const settings = await loadSettings();
-  await chrome.alarms.create(ALARM_NAME, {
-    periodInMinutes: settings.intervalMinutes,
-    delayInMinutes: settings.intervalMinutes,
+function scheduleAlarm(): Promise<void> {
+  const next = alarmQueue.then(async () => {
+    const settings = await loadSettings();
+    await chrome.alarms.create(ALARM_NAME, {
+      periodInMinutes: settings.intervalMinutes,
+      delayInMinutes: settings.intervalMinutes,
+    });
   });
+  alarmQueue = next.catch(() => undefined);
+  return next;
 }
 
 /**
