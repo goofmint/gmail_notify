@@ -165,7 +165,12 @@ fetchFeed(n): fetch(GMAIL_FEED_URL(n) + '?zx=' + rand,
    - `dsInfo.dsid`
    - `dsInfo.primaryEmail`
    - `webservices.mccgateway.url`（末尾の `:443` を除去する）
-3. `POST {mcc}/mailws2/v1/geqs/query?dsid=` を送り、mailbox を問い合わせる。`GeqsSchema` で検証し、`name === 'INBOX'` の `unseenCount` を未読数にする。INBOX が無ければエラーとする。
+3. `POST {mcc}/mailws2/v1/geqs/query?dsid=` を送り、mailbox を問い合わせる。body は次のとおり。
+   ```json
+   {"domain":"mailbox","predicate":{"type":"eq","expression":{"type":"property","property":"isMboxDeleted"},"value":false},
+    "includeLabels":true,"properties":["identifier","name","uidValidity","unseenCount","seenDeletedCount","unseenDeletedCount","messageCount","flags"]}
+   ```
+   この body は公開されている iCloud メール通知拡張の実装（https://github.com/Yang-Nankai/ExPGuard/blob/main/datasets/firefox/%7Bc98e042b-917d-4bdb-b125-dd3ace21ab71%7D_4.0.1/Source/js/scripts/icloud.js ）と同じ値で、T6-3 の実機テストで確認する。応答は `domainObjects` 配列に mailbox が入る想定で、`GeqsSchema` で検証し、`name === 'INBOX'` の `unseenCount` を未読数にする。INBOX が無ければエラーとする。
 4. `POST {mcc}/mailws2/v1/thread/search?dsid=` を送る。body は次のとおり。
    ```json
    {"responseType":"THREAD_DIGEST","includeFolderStatus":false,"maxResults":50,
