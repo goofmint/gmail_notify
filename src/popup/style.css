@@ -1,0 +1,196 @@
+:root {
+  --color-text: #202124;
+  --color-muted: #5f6368;
+  --color-border: #dadce0;
+  --color-hover: #f1f3f4;
+  --color-accent: #1a73e8;
+  --color-error: #d93025;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  width: 400px;
+  margin: 0;
+  font-family: system-ui, -apple-system, 'Segoe UI', 'Hiragino Sans', 'Noto Sans JP', sans-serif;
+  font-size: 13px;
+  line-height: 1.4;
+  color: var(--color-text);
+  background: #fff;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.summary {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.total {
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+button {
+  font: inherit;
+  padding: 4px 10px;
+  border: 1px solid var(--color-border);
+  border-radius: 4px;
+  background: #fff;
+  cursor: pointer;
+}
+
+button:hover:not(:disabled) {
+  background: var(--color-hover);
+}
+
+button:disabled {
+  cursor: default;
+  color: var(--color-muted);
+}
+
+a {
+  color: var(--color-accent);
+}
+
+.muted,
+.meta,
+.label {
+  color: var(--color-muted);
+}
+
+.meta {
+  font-size: 12px;
+}
+
+main {
+  max-height: 520px;
+  overflow-y: auto;
+}
+
+main > p {
+  margin: 0;
+  padding: 12px;
+}
+
+.account {
+  border-bottom: 1px solid var(--color-border);
+}
+
+.account h2 {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0;
+  padding: 8px 12px 4px;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.account h2 .email {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.account h2 .count {
+  margin-left: auto;
+}
+
+.badge {
+  padding: 0 6px;
+  border-radius: 8px;
+  font-size: 11px;
+  color: #fff;
+  background: var(--color-accent);
+}
+
+.account > p {
+  margin: 0;
+  padding: 4px 12px 8px;
+}
+
+.account ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.mail {
+  padding: 6px 12px;
+  cursor: pointer;
+}
+
+.mail:hover,
+.mail:focus-visible {
+  background: var(--color-hover);
+  outline: none;
+}
+
+.mail .row {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.mail .from {
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.mail .date {
+  flex-shrink: 0;
+  font-size: 12px;
+  color: var(--color-muted);
+}
+
+.mail .subject,
+.mail .snippet {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.mail .snippet {
+  font-size: 12px;
+  color: var(--color-muted);
+}
+
+.status-signedOut h2 .badge {
+  background: var(--color-muted);
+}
+
+.status-signedOut > p {
+  color: var(--color-muted);
+}
+
+.status-error h2 .badge {
+  background: var(--color-error);
+}
+
+.error,
+.status-error > p {
+  color: var(--color-error);
+}
