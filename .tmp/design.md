@@ -219,7 +219,7 @@ fetchFeed(n): fetch(GMAIL_FEED_URL(n) + '?zx=' + rand,
 7. 同時に複数の runCheck が動かないよう、実行中の Promise を共有する。
 
 ### 8.3 badge.ts
-- `setBadgeText`: 合計が 0 なら空文字。1000 以上なら `999+` と表示する。
+- `setBadgeText`: 合計が 0 なら空文字。1000 以上なら `999+` と表示する。ただし合計が 0 で ok 以外のアカウントがあるときは `!` と表示する（空文字だとバッジが消えて警告色が見えないため、FR-1.3 を FR-1.2 より優先する）。
 - `setBadgeBackgroundColor`: 全アカウントが ok なら通常色、それ以外なら警告色にする。色は constants で定義する。
 
 ### 8.4 notifications.ts
