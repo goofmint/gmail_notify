@@ -26,6 +26,10 @@ describe('ポップアップの HTML', () => {
     expect(html).toMatch(/<a id="open-settings" href="\.\.\/options\/index\.html" target="_blank">設定<\/a>/);
   });
 
+  it('エラーを表示する通知欄があり、初期状態では隠す', () => {
+    expect(html).toMatch(/<p id="message"[^>]*role="alert"[^>]*hidden><\/p>/);
+  });
+
   it('アカウントの描画領域に初期メッセージがある', () => {
     expect(html).toMatch(/<main id="accounts">\s*<p id="empty"[^>]*>まだ確認していません<\/p>\s*<\/main>/);
   });

@@ -204,3 +204,10 @@ main > p {
   display: block;
   padding: 0 12px 8px;
 }
+
+.message {
+  margin: 0;
+  white-space: pre-line;
+  padding: 6px 12px;
+  border-bottom: 1px solid var(--color-border);
+}
