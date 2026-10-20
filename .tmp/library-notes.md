@@ -20,7 +20,7 @@
 | typescript | **7.0.2**（Go 製ネイティブ、API なし） / 6.0.3 | **typescript-eslint は TS 7 に非対応**（peer: `>=4.8.4 <6.1.0`）。**TS 6.0.3 を使う** |
 | typescript-eslint | 8.72.0 | ESLint 10 対応。`tseslint.config()` は非推奨、`defineConfig` を使う |
 | eslint | 10.13.0 | eslintrc 完全廃止。flat config のみ |
-| vitest | 5.0.5 | Node >= 22.12、Vite >= 6.4 が必須。`clearMocks` が既定 true に |
+| vitest | 5.0.5 | engines は Node `^22.12 || ^24 || >=26`（23 と 25 は範囲外。25.2.1 で動作確認済みだが保証外）。Vite >= 6.4 が必須。`clearMocks` が既定 true に |
 | fast-xml-parser | 5.11.2 | ESM で `import { XMLParser }` 可 |
 | zod | 4.6.7 | `import * as z from 'zod'` で v4。`error.issues`、`z.prettifyError` |
 | @resvg/resvg-js | 2.6.2 | CJS パッケージだが ESM から named import 可（動作確認済み） |
@@ -228,7 +228,7 @@ export default defineConfig(
 ## 5. Vitest 5.0.5
 
 - インストール: `npm i -D vitest`（`vite` は peer 依存。本プロジェクトは vite を入れるので問題なし）
-- Node `^22.12 || ^24 || >=26`。Node 25.2.1 は engines 的には外れるが動作確認済み（警告なし）。
+- Node `^22.12 || ^24 || >=26`。Node 25.2.1 は engines 的には外れるが動作確認済み（警告なし）。T0-2 では `package.json` の `engines.node` をこの範囲に合わせ、CI を使う場合は Node 24 系を固定する。
 - 5.0 の主な変更: `clearMocks` が既定 true、ネストしたスコープ内の `vi.mock` は throw、`await` し忘れた `resolves/rejects` はテスト失敗、`vi.fn(Class)` の prototype がチェーンされる。
 
 ```ts
@@ -370,4 +370,4 @@ for (const size of SIZES) {
 - テスト対象のコードを作らないため、テストも書かない。基盤（package.json、tsconfig、ESLint、Vitest）の構築は T0-2 で行い、そこで 3 コマンドを通す。
 - 後続タスクへの引き継ぎ:
   - T0-2: §8 の devDependencies 案と §0 の互換条件に従って依存を決める。`vitest.config.ts` を `vite.config.ts` から分け、`crx()` をテスト設定に含めない。
-  - T2（Gmail パーサ）: `XMLParser.parse` の結果に型注釈を付けず、そのまま zod の `safeParse` に渡し、成功時の `data` だけを使う（§2、§3）。
+  - T2（Gmail パーサ）: `XMLParser.parse` の戻り値は型定義上 `any`。これを変数に受けると `no-unsafe-assignment` に、`any` 以外の型の引数に渡すと `no-unsafe-argument` に掛かる。zod の `safeParse(data: unknown)` は引数が `unknown` なので `no-unsafe-argument` の対象外（ルール仕様で `unknown` 引数への `any` は許容）。したがって `any` の境界は「`parser.parse(xml)` を変数に受けず、式として直接 `GmailFeedSchema.safeParse(...)` に渡す」1 箇所に閉じ、成功時の `data` だけを使う（§2、§3）。この 1 行以外にアプリ側の `any`/`unknown` を置かない。

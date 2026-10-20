@@ -1,7 +1,7 @@
 # タスクリスト: Gmail + iCloud 未読通知 Chrome拡張
 
 対応する設計: `.tmp/design.md`
-各タスクの完了条件として、関連するテストを書き、`npm run typecheck`、`npm run lint`、`npm test` が通ることを確認する。
+各タスクの完了条件として、関連するテストを書き、`npm run typecheck`、`npm run lint`、`npm test` が通ることを確認する。ただし T0-1 は調査のみで `package.json` が存在しないため、この完了条件は T0-2 以降に適用する。
 
 ## Phase 0: 準備
 - [ ] T0-1 Context7 で次のライブラリの最新の使い方を確認し、要点を `.tmp/library-notes.md` にメモする。
@@ -72,5 +72,5 @@
 - [ ] T6-3 実機での受け入れテストをユーザーが行う（requirements §6 の 1〜5）。不具合があれば修正する。
 
 ## 依存関係
-- T0 → T1 → (T2 ∥ T3) → T4 → T5 → T6
-- T2 と T3 は互いに独立しているので、並行して進められる。
+- T0 → T1 → T2-1 → (T2-2〜T2-5 ∥ T3) → T4 → T5 → T6
+- T2-1 と T3-1 はどちらも `src/providers/schemas.ts` を変更するので、T3-1 は T2-1 の後に行う。それ以外の T2 と T3 は互いに独立しているので、並行して進められる。
