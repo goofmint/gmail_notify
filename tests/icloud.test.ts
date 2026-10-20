@@ -189,6 +189,27 @@ describe('fetchIcloudState', () => {
     expect(await fetchIcloudState()).toEqual(signedOut());
   });
 
+  it.each([401, 403, 421, 450])('geqs/query が %i なら signedOut を返し、thread/search は呼ばない', async (status) => {
+    stubCookie(authCookie);
+    const fetchMock = stubFetch({ geqs: () => json({}, status) });
+    expect(await fetchIcloudState()).toEqual(signedOut());
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+  });
+
+  it('thread/search が 500 なら HTTP 500 の error を返す', async () => {
+    stubCookie(authCookie);
+    stubFetch({ search: () => json({}, 500) });
+    expect(await fetchIcloudState()).toEqual({
+      provider: 'icloud',
+      accountKey: 'icloud',
+      email: EMAIL,
+      status: 'error',
+      unreadCount: 0,
+      items: [],
+      errorMessage: 'HTTP 500',
+    } satisfies AccountState);
+  });
+
   it('geqs/query が 500 なら HTTP 500 の error を返し、thread/search は呼ばない', async () => {
     stubCookie(authCookie);
     const fetchMock = stubFetch({ geqs: () => json({}, 500) });
@@ -230,6 +251,15 @@ describe('fetchIcloudState', () => {
     const state = await fetchIcloudState();
     expect(state).toMatchObject({ status: 'error', email: null });
     expect(state.errorMessage).toContain('iCloud API の仕様変更の可能性');
+  });
+
+  it('geqs/query の応答がスキーマに合わなければ仕様変更の可能性を含む error を返し、thread/search は呼ばない', async () => {
+    stubCookie(authCookie);
+    const fetchMock = stubFetch({ geqs: () => json({ domainObjects: 'INBOX' }) });
+    const state = await fetchIcloudState();
+    expect(state).toMatchObject({ status: 'error', email: EMAIL, unreadCount: 0, items: [] });
+    expect(state.errorMessage).toContain('iCloud API の仕様変更の可能性');
+    expect(fetchMock).toHaveBeenCalledTimes(2);
   });
 
   it('geqs/query に INBOX が無ければ error を返す', async () => {
