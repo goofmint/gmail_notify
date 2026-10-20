@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<feed version="0.3" xmlns="http://purl.org/atom/ns#">
+  <title>Gmail - Inbox for user@gmail.com</title>
+  <tagline>New messages in your Gmail Inbox</tagline>
+  <fullcount>1</fullcount>
+  <link rel="alternate" href="https://mail.google.com/mail" type="text/html"/>
+  <modified>2026-10-20T01:00:00Z</modified>
+  <entry>
+    <title>会議の件</title>
+    <summary>明日の会議は 10 時からです &amp; よろしくお願いします</summary>
+    <link rel="alternate" href="https://mail.google.com/mail?account_id=user@gmail.com&amp;view=conv&amp;extsrc=atom" type="text/html"/>
+    <modified>2026-10-20T00:59:00Z</modified>
+    <issued>2026-10-20T00:58:00Z</issued>
+    <id>tag:gmail.google.com,2004:1780000000000000001</id>
+    <author>
+      <name>山田 太郎</name>
+      <email>taro@example.com</email>
+    </author>
+  </entry>
+</feed>

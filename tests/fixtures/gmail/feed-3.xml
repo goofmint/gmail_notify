@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<feed version="0.3" xmlns="http://purl.org/atom/ns#">
+  <title>Gmail - Inbox for user@gmail.com</title>
+  <tagline>New messages in your Gmail Inbox</tagline>
+  <fullcount>5</fullcount>
+  <link rel="alternate" href="https://mail.google.com/mail" type="text/html"/>
+  <modified>2026-10-20T03:00:00Z</modified>
+  <entry>
+    <title>3 通目</title>
+    <summary>3 通目 の本文</summary>
+    <link rel="alternate" href="https://mail.google.com/mail?account_id=user@gmail.com&amp;message_id=18f0000000000003&amp;view=conv&amp;extsrc=atom" type="text/html"/>
+    <modified>2026-10-20T02:59:00Z</modified>
+    <issued>2026-10-20T02:59:00Z</issued>
+    <id>tag:gmail.google.com,2004:18f0000000000003</id>
+    <author>
+      <name>Alice</name>
+      <email>alice@example.com</email>
+    </author>
+  </entry>
+  <entry>
+    <title>2 通目</title>
+    <summary>2 通目 の本文</summary>
+    <link rel="alternate" href="https://mail.google.com/mail?account_id=user@gmail.com&amp;message_id=18f0000000000002&amp;view=conv&amp;extsrc=atom" type="text/html"/>
+    <modified>2026-10-20T02:00:00Z</modified>
+    <issued>2026-10-20T02:00:00Z</issued>
+    <id>tag:gmail.google.com,2004:18f0000000000002</id>
+    <author>
+      <email>noname@example.com</email>
+    </author>
+  </entry>
+  <entry>
+    <title>1 通目</title>
+    <summary>1 通目 の本文</summary>
+    <link rel="alternate" href="https://mail.google.com/mail?account_id=user@gmail.com&amp;message_id=18f0000000000001&amp;view=conv&amp;extsrc=atom" type="text/html"/>
+    <modified>2026-10-20T01:00:00Z</modified>
+    <issued>2026-10-20T01:00:00Z</issued>
+    <id>tag:gmail.google.com,2004:18f0000000000001</id>
+    <author>
+      <name>Carol</name>
+      <email>carol@example.com</email>
+    </author>
+  </entry>
+</feed>
