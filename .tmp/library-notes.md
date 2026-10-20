@@ -20,7 +20,7 @@
 | typescript | **7.0.2**（Go 製ネイティブ、API なし） / 6.0.3 | **typescript-eslint は TS 7 に非対応**（peer: `>=4.8.4 <6.1.0`）。**TS 6.0.3 を使う** |
 | typescript-eslint | 8.72.0 | ESLint 10 対応。`tseslint.config()` は非推奨、`defineConfig` を使う |
 | eslint | 10.13.0 | eslintrc 完全廃止。flat config のみ |
-| vitest | 5.0.5 | engines は Node `^22.12 || ^24 || >=26`（23 と 25 は範囲外。25.2.1 で動作確認済みだが保証外）。Vite >= 6.4 が必須。`clearMocks` が既定 true に |
+| vitest | 5.0.5 | engines は Node `^22.12 \|\| ^24 \|\| >=26`（23 と 25 は範囲外。25.2.1 で動作確認済みだが保証外）。Vite >= 6.4 が必須。`clearMocks` が既定 true に |
 | fast-xml-parser | 5.11.2 | ESM で `import { XMLParser }` 可 |
 | zod | 4.6.7 | `import * as z from 'zod'` で v4。`error.issues`、`z.prettifyError` |
 | @resvg/resvg-js | 2.6.2 | CJS パッケージだが ESM から named import 可（動作確認済み） |
@@ -146,7 +146,7 @@ const GmailEntrySchema = z.object({
   summary: z.string(),
   link: z.object({ '@_href': z.string() }),
   issued: z.string(),
-  author: z.object({ name: z.string(), email: z.string() }),
+  author: z.object({ name: z.string().optional(), email: z.string() }), // 設計 §6.3: name が無ければ email を使う
 });
 
 export const GmailFeedSchema = z.object({
@@ -338,7 +338,7 @@ for (const size of SIZES) {
 ### scripts/build-icons.ts の実行（Node 25.2.1）
 - Node は **v23.6 / v22.18 以降、型ストリップが既定で有効**（`--experimental-strip-types` 不要。25.2 で stable）。`node scripts/build-icons.ts` がそのまま動くことを確認済み。
 - 条件: `package.json` に `"type": "module"`（ないと `Cannot use import statement outside a module`）、型 import は `import type` を付ける、相対 import は `.ts` 拡張子必須、enum / namespace（値あり）/ parameter properties / decorators は使えない、tsconfig は読まれない（paths 不可）。
-- `tsx` 4.23.15 は上記制約なしで動く（`npx tsx scripts/build-icons.ts` も確認済み）。制約が気にならなければ依存を減らすため `node` 直実行で良い。package.json の script は `"build:icons": "node scripts/build-icons.ts"`。
+- `tsx` 4.23.15 は上記制約なしで動く（`npx tsx scripts/build-icons.ts` も確認済み）。制約が気にならなければ依存を減らすため `node` 直実行で良い。package.json の script 名はタスク文書（T0-2）に合わせて `icons` にする（`"icons": "tsx scripts/build-icons.ts"`。node 直実行なら `"icons": "node scripts/build-icons.ts"`）。
 
 ## 8. package.json devDependencies 案
 

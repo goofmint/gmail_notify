@@ -4,7 +4,7 @@
 各タスクの完了条件として、関連するテストを書き、`npm run typecheck`、`npm run lint`、`npm test` が通ることを確認する。ただし T0-1 は調査のみで `package.json` が存在しないため、この完了条件は T0-2 以降に適用する。
 
 ## Phase 0: 準備
-- [ ] T0-1 Context7 で次のライブラリの最新の使い方を確認し、要点を `.tmp/library-notes.md` にメモする。
+- [x] T0-1 Context7 で次のライブラリの最新の使い方を確認し、要点を `.tmp/library-notes.md` にメモする。（完了。Context7 MCP に接続できなかったため、公式ドキュメント、npm registry、スクラッチ環境での実行確認で代替した）
   - @crxjs/vite-plugin
   - fast-xml-parser
   - zod

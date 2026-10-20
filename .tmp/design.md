@@ -157,7 +157,7 @@ fetchFeed(n): fetch(GMAIL_FEED_URL(n) + '?zx=' + rand,
     regexFilter: '^https://[^/]+\\.icloud\\.com/(setup|mailws2)/',
     resourceTypes: ['xmlhttprequest'] } }
 ```
-注意: この modifyHeaders は送信する `Origin`/`Referer` ヘッダーを書き換えるだけで、fetch の実際の origin（`chrome-extension://...`）や initiator は変わらない。応答の `Access-Control-Allow-Origin` が書き換え後の値と一致しても、ブラウザの CORS 判定で応答が拒否される可能性がある。T3-4 のユニットテストでは検証できないため、T6-3 の実機テストで Service Worker から実際に validate、geqs/query、thread/search を fetch し、preflight の有無、HTTP ステータス、`response.json()` の結果を確認する。拒否される場合は、`chrome.cookies` で取得した Cookie を明示的に付ける方式などへ設計を見直す。
+注意: この modifyHeaders は送信する `Origin`/`Referer` ヘッダーを書き換えるだけで、fetch の実際の origin（`chrome-extension://...`）や initiator は変わらない。応答の `Access-Control-Allow-Origin` が書き換え後の値と一致しても、ブラウザの CORS 判定で応答が拒否される可能性がある。T3-4 のユニットテストでは検証できないため、T6-3 の実機テストで Service Worker から実際に validate、geqs/query、thread/search を fetch し、preflight の有無、HTTP ステータス、`response.json()` の結果を確認する。拒否される場合の代替方式は、同じ DNR の dynamic rule に `responseHeaders` の書き換えを追加し、`Access-Control-Allow-Origin` を拡張の origin（`chrome-extension://{id}`）に、`Access-Control-Allow-Credentials` を `true` に設定する方法を第一候補とする（`Cookie` は Fetch の禁止リクエストヘッダーなので、`chrome.cookies` で読んだ値を `fetch` のヘッダーに付ける方式は実装できない）。方式見直しの判断基準は、実機テストで 3 つのリクエストのいずれかが CORS エラー（`TypeError: Failed to fetch`）になることとする。
 
 ### 7.2 処理の流れ
 1. 事前チェック: `chrome.cookies.get({url:'https://www.icloud.com', name:'X-APPLE-WEBAUTH-USER'})` で Cookie を調べる。無ければ signedOut として終了する。
@@ -175,7 +175,7 @@ fetchFeed(n): fetch(GMAIL_FEED_URL(n) + '?zx=' + rand,
    | MailItem | 値 |
    |---|---|
    | id | threadId |
-   | from | senders[0] |
+   | from | senders[0]（`ThreadSearchSchema` で `senders` に `.min(1)` を付け、空配列はスキーマエラーにする） |
    | subject | subject |
    | snippet | preview |
    | date | timestamp（ミリ秒）を ISO 文字列に変換 |
