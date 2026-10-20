@@ -14,6 +14,6 @@ export default defineManifest({
     type: 'module',
   },
   options_page: 'src/options/index.html',
-  permissions: ['alarms', 'storage', 'notifications', 'declarativeNetRequest', 'cookies', 'tabs'],
+  permissions: ['alarms', 'storage', 'notifications', 'declarativeNetRequest', 'cookies'],
   host_permissions: ['https://mail.google.com/*', 'https://*.icloud.com/*'],
 });
