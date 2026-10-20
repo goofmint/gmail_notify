@@ -1,0 +1,13 @@
+{
+  "dsInfo": {
+    "dsid": "12345678901",
+    "primaryEmail": "taro@icloud.example",
+    "fullName": "Taro Example",
+    "appleId": "taro@icloud.example"
+  },
+  "webservices": {
+    "mccgateway": { "url": "https://p123-mccgateway.icloud.com:443", "status": "active" },
+    "mail": { "url": "https://p123-mailws.icloud.com:443", "status": "active" }
+  },
+  "isExtendedLogin": true
+}
