@@ -10,6 +10,8 @@ export const DEFAULT_SETTINGS: Settings = {
 
 /** チェック間隔の最小値（分）。 */
 export const MIN_INTERVAL_MINUTES = 0.5;
+/** プロバイダへの 1 リクエストのタイムアウト（ミリ秒）。応答が返らない場合に runCheck 全体が止まるのを防ぐ。 */
+export const FETCH_TIMEOUT_MS = 15_000;
 /** 検出する Gmail アカウントの上限。 */
 export const MAX_GMAIL_ACCOUNTS = 10;
 /** iCloud の thread/search で取得する件数。 */

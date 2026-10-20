@@ -57,7 +57,11 @@ describe('manifest', () => {
       'declarativeNetRequest',
       'cookies',
     ]);
-    expect(manifest.host_permissions).toEqual(['https://mail.google.com/*', 'https://*.icloud.com/*']);
+    expect(manifest.host_permissions).toEqual([
+      'https://mail.google.com/*',
+      'https://accounts.google.com/*',
+      'https://*.icloud.com/*',
+    ]);
   });
 
   it('icons と action.default_icon は 4 サイズを同じパスで指す', async () => {
