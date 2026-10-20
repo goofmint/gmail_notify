@@ -194,3 +194,8 @@ main > p {
 .status-error > p {
   color: var(--color-error);
 }
+
+.account > .login {
+  display: block;
+  padding: 0 12px 8px;
+}
