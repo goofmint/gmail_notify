@@ -21,6 +21,10 @@ function createArea() {
   return {
     items,
     get: vi.fn((key: string): Promise<StoredItems> => {
+      // chrome.storage と同じく、保存済みのキーだけを返す（継承プロパティは返さない）。
+      if (!Object.hasOwn(items, key)) {
+        return Promise.resolve({});
+      }
       const value = items[key];
       return Promise.resolve(value === undefined ? {} : { [key]: value });
     }),
@@ -142,6 +146,10 @@ describe('通知の URL', () => {
 
   it('未保存なら null を返す', async () => {
     await expect(loadNotificationUrl(notificationId)).resolves.toBeNull();
+  });
+
+  it('継承プロパティ名のキー（constructor）も未保存として null を返す', async () => {
+    await expect(loadNotificationUrl('constructor')).resolves.toBeNull();
   });
 
   it('文字列でなければ例外にする', async () => {

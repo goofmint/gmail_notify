@@ -42,10 +42,11 @@ async function loadValidated<T>(
   label: string,
 ): Promise<T | null> {
   const items = await area.get(key);
-  const raw = items[key];
-  if (raw === undefined) {
+  // 継承プロパティ（constructor など）を保存済みの値と取り違えないよう、own property で判定する。
+  if (!Object.hasOwn(items, key)) {
     return null;
   }
+  const raw = items[key];
   const parsed = schema.safeParse(raw);
   if (!parsed.success) {
     throw new Error(`保存済みの ${label} の形式が不正: ${z.prettifyError(parsed.error)}`);
