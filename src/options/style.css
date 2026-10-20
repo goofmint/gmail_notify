@@ -1,0 +1,47 @@
+:root {
+  --color-text: #202124;
+  --color-muted: #5f6368;
+  --color-error: #d93025;
+}
+
+body {
+  max-width: 480px;
+  margin: 24px auto;
+  padding: 0 16px;
+  font-family: system-ui, -apple-system, 'Segoe UI', 'Hiragino Sans', 'Noto Sans JP', sans-serif;
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--color-text);
+  background: #fff;
+}
+
+h1 {
+  font-size: 18px;
+  margin: 0 0 16px;
+}
+
+form {
+  display: grid;
+  gap: 12px;
+}
+
+.field {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+select,
+input {
+  font: inherit;
+}
+
+#status {
+  min-height: 1.5em;
+  color: var(--color-muted);
+  white-space: pre-line;
+}
+
+#status.error {
+  color: var(--color-error);
+}
