@@ -352,6 +352,7 @@ for (const size of SIZES) {
     "@types/chrome": "^0.3.5",
     "@types/node": "^26.6.5",
     "eslint": "^10.13.0",
+    "tsx": "^4.23.15",
     "typescript": "~6.0.3",
     "typescript-eslint": "^8.72.0",
     "vite": "^8.3.4",
