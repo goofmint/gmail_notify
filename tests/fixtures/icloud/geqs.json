@@ -1,0 +1,7 @@
+{
+  "domainObjects": [
+    { "identifier": "31", "name": "INBOX", "unseenCount": 2, "messageCount": 3, "flags": [] },
+    { "identifier": "32", "name": "Junk", "unseenCount": 5, "messageCount": 5, "flags": [] },
+    { "identifier": "53", "name": "Deleted Messages", "unseenCount": 0, "messageCount": 1, "flags": [] }
+  ]
+}

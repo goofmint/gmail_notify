@@ -1,0 +1,32 @@
+{
+  "threadList": [
+    {
+      "threadId": "thread-a1",
+      "senders": ["Hanako Example <hanako@example.com>"],
+      "subject": "打ち合わせの件",
+      "preview": "来週の打ち合わせについてご相談です。",
+      "timestamp": 1792461600000,
+      "flags": [],
+      "messageCount": 1
+    },
+    {
+      "threadId": "thread-b2",
+      "senders": ["Jiro Example <jiro@example.com>", "Taro Example <taro@icloud.example>"],
+      "subject": "Re: 資料の送付",
+      "preview": "資料を受け取りました。",
+      "timestamp": 1792458000000,
+      "flags": ["\\Flagged"],
+      "messageCount": 2
+    },
+    {
+      "threadId": "thread-c3",
+      "senders": ["News <news@example.com>"],
+      "subject": "今週のお知らせ",
+      "preview": "既読のメールです。",
+      "timestamp": 1792454400000,
+      "flags": ["\\Seen"],
+      "messageCount": 1
+    }
+  ],
+  "sessionHeaders": { "modseq": 100, "threadmodseq": 200 }
+}
