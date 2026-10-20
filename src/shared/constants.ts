@@ -43,5 +43,7 @@ export const ALARM_NAME = 'mail-check';
 
 /** バッジの背景色。全アカウントが ok なら ok、それ以外は warning。 */
 export const BADGE_COLORS = { ok: '#1A73E8', warning: '#D93025' } as const;
+/** 未読が 0 件で ok 以外のアカウントがあるときのバッジの文字列。空文字だとバッジ自体が消え、警告色が見えないため。 */
+export const BADGE_WARNING_TEXT = '!';
 /** バッジに表示する最大件数。これを超えたら `999+` と表示する。 */
 export const BADGE_MAX_COUNT = 999;
