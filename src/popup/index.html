@@ -4,9 +4,23 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Gmail Notify</title>
+    <link rel="stylesheet" href="./style.css" />
   </head>
   <body>
-    <div id="app"></div>
+    <header class="header">
+      <div class="summary">
+        <span class="label">未読</span>
+        <span id="total-unread" class="total">—</span>
+        <span class="meta">最終チェック: <span id="checked-at">未取得</span></span>
+      </div>
+      <div class="actions">
+        <button id="refresh" type="button">今すぐ更新</button>
+        <a id="open-settings" href="../options/index.html" target="_blank">設定</a>
+      </div>
+    </header>
+    <main id="accounts">
+      <p id="empty" class="muted">まだ確認していません</p>
+    </main>
     <script type="module" src="./main.ts"></script>
   </body>
 </html>
