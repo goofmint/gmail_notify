@@ -68,7 +68,7 @@
 
 ## Phase 6: 検証
 - [x] T6-1 `npm run typecheck`、`npm run lint`、`npm test`、`npm run build` がすべて通ることを確認する。（完了。`rm -rf node_modules dist && npm ci` 後に typecheck、lint、test（25 ファイル、314 件。iCloud の geqs/query と thread/search の判定を補ったあとは 320 件）、build がいずれも exit 0。`npm run icons` で PNG に差分が出ないこと、dist/manifest.json の参照先がすべて dist にあることも確認した）
-- [ ] T6-2 `README.md` にセットアップ手順、ビルド手順、読み込み手順、制約（非公式 API であること、サードパーティ Cookie のブロック）を書く。
+- [x] T6-2 `README.md` にセットアップ手順、ビルド手順、読み込み手順、制約（非公式 API であること、サードパーティ Cookie のブロック）を書く。（完了。README の npm script と権限の一覧は `tests/readme.test.ts` で package.json と manifest に照合する）
 - [ ] T6-3 実機での受け入れテストをユーザーが行う（requirements §6 の 1〜5）。不具合があれば修正する。
 
 ## 依存関係
