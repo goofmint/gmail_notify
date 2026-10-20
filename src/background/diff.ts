@@ -36,7 +36,13 @@ export function nextSeenIds(prevSeen: SeenIds | null, accounts: AccountState[]):
   const next: SeenIds = { ...prevSeen };
   for (const account of accounts) {
     if (account.status === 'ok') {
-      next[account.accountKey] = account.items.map((item) => item.id);
+      // accountKey が "__proto__" でも own property として保存されるよう defineProperty を使う。
+      Object.defineProperty(next, account.accountKey, {
+        value: account.items.map((item) => item.id),
+        enumerable: true,
+        writable: true,
+        configurable: true,
+      });
     }
   }
   return next;

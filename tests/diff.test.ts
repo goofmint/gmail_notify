@@ -72,6 +72,14 @@ describe('detectNewMail', () => {
 });
 
 describe('nextSeenIds', () => {
+  it('accountKey が __proto__ でも own property として保存し、detectNewMail が既知アカウントと認識する', () => {
+    const next = nextSeenIds({}, [account('__proto__', ['a'])]);
+    expect(Object.hasOwn(next, '__proto__')).toBe(true);
+    expect(Object.getOwnPropertyDescriptor(next, '__proto__')?.value).toEqual(['a']);
+    const groups = detectNewMail(next, [account('__proto__', ['a', 'b'])]);
+    expect(groups.map((group) => group.items.map((mail) => mail.id))).toEqual([['b']]);
+  });
+
   it('初回は ok のアカウントの id だけを保存する', () => {
     const accounts = [account('gmail:u/0', ['a', 'b']), account('icloud', ['t1'], 'error')];
     expect(nextSeenIds(null, accounts)).toEqual({ 'gmail:u/0': ['a', 'b'] });
