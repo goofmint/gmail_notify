@@ -49,3 +49,6 @@ export type Settings = {
   gmailEnabled: boolean;
   icloudEnabled: boolean;
 };
+
+/** accountKey ごとの、前回までに見た MailItem.id。初回（未保存）は SeenIds ではなく null で表す。 */
+export type SeenIds = Record<string, string[]>;
