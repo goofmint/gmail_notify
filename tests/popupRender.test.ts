@@ -174,6 +174,17 @@ describe('renderAccounts', () => {
     expect(onOpenUrl).toHaveBeenCalledExactlyOnceWith(item.openUrl);
   });
 
+  it('キーの長押しで繰り返される keydown では openUrl を渡さず、スクロールだけ止める', () => {
+    const item = mail();
+    renderAccounts(container, result([account({ unreadCount: 1, items: [item] })]), onOpenUrl);
+    const row = firstSection().querySelector<HTMLElement>('li.mail');
+    const event = new KeyboardEvent('keydown', { key: ' ', repeat: true, bubbles: true, cancelable: true });
+    row?.dispatchEvent(event);
+    row?.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', repeat: true, bubbles: true }));
+    expect(event.defaultPrevented).toBe(true);
+    expect(onOpenUrl).not.toHaveBeenCalled();
+  });
+
   it('メールとアカウントの順序を保つ', () => {
     const items = [mail({ id: 'a', subject: '1' }), mail({ id: 'b', subject: '2' }), mail({ id: 'c', subject: '3' })];
     renderAccounts(

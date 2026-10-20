@@ -80,9 +80,13 @@ function renderMail(doc: Document, item: MailItem, onOpenUrl: (url: string) => v
     onOpenUrl(item.openUrl);
   });
   // role="button" なので、WAI-ARIA の button パターンに合わせて Enter と Space で開く。Space はページのスクロールを止める。
+  // キーを押し続けると keydown が繰り返されるため、繰り返し分では開かない（タブが複数開くのを防ぐ）。
   row.addEventListener('keydown', (event) => {
     if (event.key === 'Enter' || event.key === ' ') {
       event.preventDefault();
+      if (event.repeat) {
+        return;
+      }
       onOpenUrl(item.openUrl);
     }
   });
