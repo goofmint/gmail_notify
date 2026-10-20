@@ -8,6 +8,7 @@ import {
   GMAIL_LOGIN_URL,
   GMAIL_MESSAGE_URL,
   ICLOUD_MAIL_URL,
+  INTERVAL_OPTIONS_MINUTES,
   ICLOUD_ORIGIN,
   ICLOUD_VALIDATE_URL,
   MIN_INTERVAL_MINUTES,
@@ -52,6 +53,19 @@ describe('DEFAULT_SETTINGS', () => {
       icloudEnabled: true,
     });
     expect(DEFAULT_SETTINGS.intervalMinutes).toBeGreaterThanOrEqual(MIN_INTERVAL_MINUTES);
+  });
+});
+
+describe('INTERVAL_OPTIONS_MINUTES', () => {
+  it('設計どおりの選択肢で、すべて最小値以上', () => {
+    expect(INTERVAL_OPTIONS_MINUTES).toEqual([0.5, 1, 2, 5, 10, 15, 30]);
+    for (const minutes of INTERVAL_OPTIONS_MINUTES) {
+      expect(minutes).toBeGreaterThanOrEqual(MIN_INTERVAL_MINUTES);
+    }
+  });
+
+  it('既定の間隔を含む', () => {
+    expect(INTERVAL_OPTIONS_MINUTES.some((minutes) => minutes === DEFAULT_SETTINGS.intervalMinutes)).toBe(true);
   });
 });
 

@@ -10,6 +10,8 @@ export const DEFAULT_SETTINGS: Settings = {
 
 /** チェック間隔の最小値（分）。 */
 export const MIN_INTERVAL_MINUTES = 0.5;
+/** 設定画面で選べるチェック間隔（分）。設計 §10。 */
+export const INTERVAL_OPTIONS_MINUTES = [0.5, 1, 2, 5, 10, 15, 30] as const;
 /** プロバイダへの 1 リクエストのタイムアウト（ミリ秒）。応答が返らない場合に runCheck 全体が止まるのを防ぐ。 */
 export const FETCH_TIMEOUT_MS = 15_000;
 /** 検出する Gmail アカウントの上限。 */
