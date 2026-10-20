@@ -256,7 +256,8 @@ fetchFeed(n): fetch(GMAIL_FEED_URL(n) + '?zx=' + rand,
   background: { service_worker: 'src/background/index.ts', type: 'module' },
   options_page: 'src/options/index.html',
   permissions: ['alarms','storage','notifications','declarativeNetRequest','cookies'],
-  host_permissions: ['https://mail.google.com/*','https://*.icloud.com/*']
+  host_permissions: ['https://mail.google.com/*','https://accounts.google.com/*','https://*.icloud.com/*']
+  // accounts.google.com は未ログイン時のリダイレクト先。host 権限が無いと fetch が失敗して signedOut と判定できない
 }
 ```
 

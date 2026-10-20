@@ -25,5 +25,6 @@ export default defineManifest({
   },
   options_page: 'src/options/index.html',
   permissions: ['alarms', 'storage', 'notifications', 'declarativeNetRequest', 'cookies'],
-  host_permissions: ['https://mail.google.com/*', 'https://*.icloud.com/*'],
+  // accounts.google.com は、未ログイン時に Gmail フィードがリダイレクトされる先。応答を受け取って signedOut と判定するために必要。
+  host_permissions: ['https://mail.google.com/*', 'https://accounts.google.com/*', 'https://*.icloud.com/*'],
 });
