@@ -255,7 +255,7 @@ fetchFeed(n): fetch(GMAIL_FEED_URL(n) + '?zx=' + rand,
   icons: {...},
   background: { service_worker: 'src/background/index.ts', type: 'module' },
   options_page: 'src/options/index.html',
-  permissions: ['alarms','storage','notifications','declarativeNetRequest','cookies','tabs'],
+  permissions: ['alarms','storage','notifications','declarativeNetRequest','cookies'],
   host_permissions: ['https://mail.google.com/*','https://*.icloud.com/*']
 }
 ```
