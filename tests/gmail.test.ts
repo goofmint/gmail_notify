@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { discoverGmailAccounts, fetchFeed } from '../src/providers/gmail';
-import { GMAIL_FEED_URL, MAX_GMAIL_ACCOUNTS } from '../src/shared/constants';
+import { GMAIL_FEED_URL } from '../src/shared/constants';
 
 type FetchInput = string | URL | Request;
 
@@ -180,17 +180,17 @@ describe('discoverGmailAccounts', () => {
     expect(fetchMock).toHaveBeenCalledTimes(2);
   });
 
-  it(`上限の ${MAX_GMAIL_ACCOUNTS} 件で打ち切る`, async () => {
+  it('上限の 10 件で打ち切る（Issue #14 の契約値を固定して検証する）', async () => {
     const fetchMock = stubFetch((n) => feedResponse(n, `user${n}@example.com`, n % 3));
     const accounts = await discoverGmailAccounts();
-    expect(accounts).toHaveLength(MAX_GMAIL_ACCOUNTS);
+    expect(accounts).toHaveLength(10);
     expect(accounts.map((account) => account.accountKey)).toEqual(
-      Array.from({ length: MAX_GMAIL_ACCOUNTS }, (_, n) => `gmail:u/${n}`),
+      Array.from({ length: 10 }, (_, n) => `gmail:u/${n}`),
     );
     expect(accounts.map((account) => account.unreadCount)).toEqual(
-      Array.from({ length: MAX_GMAIL_ACCOUNTS }, (_, n) => n % 3),
+      Array.from({ length: 10 }, (_, n) => n % 3),
     );
-    expect(fetchMock).toHaveBeenCalledTimes(MAX_GMAIL_ACCOUNTS);
+    expect(fetchMock).toHaveBeenCalledTimes(10);
   });
 
   it('500 なら error のアカウントを加えて打ち切り、それまでの結果は残す', async () => {
