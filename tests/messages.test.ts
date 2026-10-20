@@ -9,10 +9,10 @@ describe('messages', () => {
     void invalid;
   });
 
-  it('CheckNowResponse は done: true だけ', () => {
-    expectTypeOf<CheckNowResponse>().toEqualTypeOf<{ done: true }>();
-    // @ts-expect-error done は true 以外にできない
-    const invalid: CheckNowResponse = { done: false };
+  it('CheckNowResponse は成功なら ok: true、失敗なら ok: false と error', () => {
+    expectTypeOf<CheckNowResponse>().toEqualTypeOf<{ ok: true } | { ok: false; error: string }>();
+    // @ts-expect-error 失敗時は error が必要
+    const invalid: CheckNowResponse = { ok: false };
     void invalid;
   });
 
