@@ -11,7 +11,7 @@ export type GmailFeed = {
   items: MailItem[];
 };
 
-const EMAIL_PATTERN = /[^\s]+@[^\s]+/;
+const EMAIL_PATTERN = /[^\s<>]+@[^\s<>]+/; // 空白と山括弧を除いた「@」の前後をメールアドレスとみなす
 const MESSAGE_ID_PATTERN = /[?&]message_id=([^&#]+)/;
 
 const parserOptions: X2jOptions = {
