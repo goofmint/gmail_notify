@@ -192,6 +192,13 @@ describe('background index', () => {
     expect(calls).toEqual(['createAlarm', 'runCheck']);
   });
 
+  it('設定変更による再チェックは、実行中なら完了後の再実行を予約する', async () => {
+    only(h.listeners.onChanged)({ ignoreUnreachableAccounts: storageChange() }, 'sync');
+
+    await vi.waitFor(() => expect(h.runCheck).toHaveBeenCalledTimes(1));
+    expect(h.runCheck).toHaveBeenCalledWith({ rerunIfInFlight: true });
+  });
+
   it('設定変更が連続しても、アラーム登録は順番に実行し最後に保存された間隔が反映される', async () => {
     const listener = only(h.listeners.onChanged);
     let resolveFirst: (settings: Settings) => void = () => undefined;

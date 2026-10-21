@@ -333,6 +333,74 @@ describe('runCheck', () => {
     expect(mocks.saveResult).toHaveBeenCalledTimes(1);
   });
 
+  it('実行中に rerunIfInFlight で呼ばれたら、完了後に最新の設定でもう一度実行し、返した Promise はその完了まで待つ', async () => {
+    // 実行中のチェックは変更前の設定（OFF）を読んでいる。実行中に ON へ変えた場合を再現する。
+    const unreachable: AccountState = {
+      ...okAccount('gmail:u/2', []),
+      email: null,
+      status: 'error',
+      errorMessage: 'フィードを取得できませんでした: Failed to fetch',
+      errorKind: 'unreachable',
+    };
+    const gmail = deferred<AccountState[]>();
+    mocks.discoverGmailAccounts.mockReturnValueOnce(gmail.promise).mockResolvedValueOnce([gmail0, unreachable]);
+
+    const first = runCheck();
+    mocks.loadSettings.mockResolvedValue({ ...SETTINGS, ignoreUnreachableAccounts: true });
+    const second = runCheck({ rerunIfInFlight: true });
+    expect(second).toBe(first);
+    // check() は設定を読んでからプロバイダを呼ぶので、呼ばれるまで待つ。
+    await vi.waitFor(() => expect(mocks.discoverGmailAccounts).toHaveBeenCalledTimes(1));
+
+    gmail.resolve([gmail0, unreachable]);
+    await first;
+
+    expect(mocks.discoverGmailAccounts).toHaveBeenCalledTimes(2);
+    expect(mocks.saveResult).toHaveBeenCalledTimes(2);
+    expect(mocks.saveResult.mock.calls[0]?.[0].accounts.map((account) => account.accountKey)).toEqual([
+      'gmail:u/0',
+      'gmail:u/2',
+      'icloud',
+    ]);
+    expect(mocks.saveResult.mock.calls[1]?.[0].accounts.map((account) => account.accountKey)).toEqual([
+      'gmail:u/0',
+      'icloud',
+    ]);
+  });
+
+  it('rerunIfInFlight 無しで実行中に呼ばれても、完了後の再実行はしない', async () => {
+    const gmail = deferred<AccountState[]>();
+    mocks.discoverGmailAccounts.mockReturnValueOnce(gmail.promise);
+
+    const first = runCheck();
+    runCheck();
+    gmail.resolve([gmail0]);
+    await first;
+    await Promise.resolve();
+
+    expect(mocks.discoverGmailAccounts).toHaveBeenCalledTimes(1);
+  });
+
+  it('実行中でなければ rerunIfInFlight があっても 1 回だけ実行する', async () => {
+    await runCheck({ rerunIfInFlight: true });
+    expect(mocks.discoverGmailAccounts).toHaveBeenCalledTimes(1);
+  });
+
+  it('再実行を予約したチェックが失敗したら予約を捨て、失敗を伝える', async () => {
+    const gmail = deferred<AccountState[]>();
+    mocks.discoverGmailAccounts.mockReturnValueOnce(gmail.promise);
+    mocks.saveResult.mockRejectedValueOnce(new Error('保存失敗'));
+
+    const first = runCheck();
+    runCheck({ rerunIfInFlight: true });
+    gmail.resolve([gmail0]);
+    await expect(first).rejects.toThrow('保存失敗');
+
+    await runCheck();
+    // 失敗したチェック 1 回と、その後の通常の 1 回だけ。予約分は実行しない。
+    expect(mocks.discoverGmailAccounts).toHaveBeenCalledTimes(2);
+  });
+
   it('完了した後に呼ばれたら、もう一度実行する', async () => {
     const first = runCheck();
     await first;
