@@ -111,31 +111,42 @@ describe('fetchFeed', () => {
     expect((await fetchFeed(1)).kind).toBe('ok');
   });
 
-  it('2xx 以外なら HTTP の状態コードで error', async () => {
+  it('2xx 以外なら HTTP の状態コードで error にし、unreachable にはしない', async () => {
     stubFetch((n) => respond('', 500, GMAIL_FEED_URL(n)));
-    expect(await fetchFeed(0)).toEqual({ kind: 'error', message: 'HTTP 500' });
+    expect(await fetchFeed(0)).toEqual({ kind: 'error', errorKind: null, message: 'HTTP 500' });
   });
 
-  it('解析に失敗したらそのメッセージで error', async () => {
+  it('解析に失敗したらそのメッセージで error にし、unreachable にはしない', async () => {
     stubFetch((n) => respond('<feed><title>x</feed>', 200, GMAIL_FEED_URL(n)));
     const result = await fetchFeed(0);
     expect(result.kind).toBe('error');
     if (result.kind === 'error') {
+      expect(result.errorKind).toBeNull();
       expect(result.message).toContain('Gmail フィードの XML を解析できない');
     }
   });
 
-  it('fetch が TypeError で失敗したら、原因の候補を補ったメッセージで error', async () => {
+  it('応答を得たあとに本文の読み取りが TypeError で失敗しても unreachable にせず、原因の候補も補わない', async () => {
+    stubFetch((n) => {
+      const response = respond('', 200, GMAIL_FEED_URL(n));
+      Object.defineProperty(response, 'text', { value: () => Promise.reject(new TypeError('network error')) });
+      return response;
+    });
+    expect(await fetchFeed(0)).toEqual({ kind: 'error', errorKind: null, message: 'network error' });
+  });
+
+  it('fetch が TypeError で失敗したら、unreachable とし、原因の候補を補ったメッセージで error', async () => {
     stubFetch(() => Promise.reject(new TypeError('Failed to fetch')));
     expect(await fetchFeed(0)).toEqual({
       kind: 'error',
+      errorKind: 'unreachable',
       message: 'フィードを取得できませんでした（ネットワークエラー、または権限のない URL への転送の可能性）: Failed to fetch',
     });
   });
 
-  it('fetch が TypeError 以外で失敗したらそのメッセージで error', async () => {
+  it('fetch が TypeError 以外で失敗したらそのメッセージで error にし、unreachable にはしない', async () => {
     stubFetch(() => Promise.reject(new DOMException('signal timed out', 'TimeoutError')));
-    expect(await fetchFeed(0)).toEqual({ kind: 'error', message: 'signal timed out' });
+    expect(await fetchFeed(0)).toEqual({ kind: 'error', errorKind: null, message: 'signal timed out' });
   });
 });
 
@@ -151,6 +162,7 @@ describe('discoverGmailAccounts', () => {
         unreadCount: 0,
         items: [],
         errorMessage: null,
+        errorKind: null,
       },
     ]);
     expect(fetchMock).toHaveBeenCalledTimes(1);
@@ -176,6 +188,7 @@ describe('discoverGmailAccounts', () => {
       status: 'ok',
       unreadCount: 1,
       errorMessage: null,
+      errorKind: null,
     });
     expect(accounts[0]?.items).toHaveLength(1);
     expect(fetchMock).toHaveBeenCalledTimes(2);
@@ -227,6 +240,7 @@ describe('discoverGmailAccounts', () => {
       unreadCount: 0,
       items: [],
       errorMessage: 'フィードを取得できませんでした（ネットワークエラー、または権限のない URL への転送の可能性）: Failed to fetch',
+      errorKind: 'unreachable',
     });
     expect(fetchMock).toHaveBeenCalledTimes(5);
   });
@@ -239,10 +253,12 @@ describe('discoverGmailAccounts', () => {
       return n <= 2 ? feedResponse(n, `user${n}@example.com`, 1) : respond('', 302, GMAIL_FEED_URL(0));
     });
     const accounts = await discoverGmailAccounts();
-    expect(accounts.map((account) => [account.accountKey, account.status, account.errorMessage])).toEqual([
-      ['gmail:u/0', 'ok', null],
-      ['gmail:u/1', 'error', 'HTTP 500'],
-      ['gmail:u/2', 'ok', null],
+    expect(
+      accounts.map((account) => [account.accountKey, account.status, account.errorMessage, account.errorKind]),
+    ).toEqual([
+      ['gmail:u/0', 'ok', null, null],
+      ['gmail:u/1', 'error', 'HTTP 500', null],
+      ['gmail:u/2', 'ok', null, null],
     ]);
     expect(fetchMock).toHaveBeenCalledTimes(4);
   });

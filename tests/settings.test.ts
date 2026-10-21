@@ -33,7 +33,13 @@ describe('loadSettings', () => {
       notificationsEnabled: false,
       gmailEnabled: true,
       icloudEnabled: false,
+      ignoreUnreachableAccounts: false,
     });
+  });
+
+  it('取得できないアカウントを無視する設定を読む', async () => {
+    storedAs({ ignoreUnreachableAccounts: true });
+    await expect(loadSettings()).resolves.toEqual({ ...DEFAULT_SETTINGS, ignoreUnreachableAccounts: true });
   });
 
   it('型が不正ならフィールド名を含むエラーにする', async () => {
@@ -44,6 +50,11 @@ describe('loadSettings', () => {
   it('間隔が 0.5 未満ならエラーにする', async () => {
     storedAs({ intervalMinutes: 0.4 });
     await expect(loadSettings()).rejects.toThrow(/intervalMinutes/);
+  });
+
+  it('取得できないアカウントを無視する設定が boolean でなければエラーにする', async () => {
+    storedAs({ ignoreUnreachableAccounts: 'true' });
+    await expect(loadSettings()).rejects.toThrow(/設定の検証に失敗[\s\S]*ignoreUnreachableAccounts/);
   });
 
   it('get の reject はそのまま伝わる', async () => {
@@ -58,6 +69,7 @@ describe('saveSettings', () => {
     notificationsEnabled: false,
     gmailEnabled: true,
     icloudEnabled: false,
+    ignoreUnreachableAccounts: true,
   };
 
   it('全項目をトップレベルキーで set する', async () => {

@@ -24,12 +24,30 @@ const accountStateSchema = z.object({
   unreadCount: z.number().int().nonnegative(),
   items: z.array(mailItemSchema),
   errorMessage: z.string().nullable(),
+  errorKind: z.enum(['unreachable']).nullable(),
 }) satisfies z.ZodType<AccountState, AccountState>;
 
 export const checkResultSchema = z.object({
   checkedAt: z.string(),
   accounts: z.array(accountStateSchema),
 }) satisfies z.ZodType<CheckResult, CheckResult>;
+
+/**
+ * errorKind を追加する前（Issue #62 より前）に保存した result を読むための移行。
+ * errorKind キーが無いアカウントだけ null を補ってから、通常のスキーマで検証する。errorKind があって値が不正なもの、
+ * 他の項目が不正なものは補わず、通常どおり例外にする（union にすると検証エラーの詳細が失われるため、前処理で補う）。
+ * 更新直後の onInstalled → runCheck で新形式に上書きされるまでの間、ポップアップが保存済みの結果を表示できるようにする。
+ */
+const storedAccountStateSchema = z.preprocess(
+  (raw) => (typeof raw === 'object' && raw !== null && !Object.hasOwn(raw, 'errorKind') ? { ...raw, errorKind: null } : raw),
+  accountStateSchema,
+);
+
+/** 保存済みの result を読むときのスキーマ。旧形式は移行する。 */
+const storedCheckResultSchema = z.object({
+  checkedAt: z.string(),
+  accounts: z.array(storedAccountStateSchema),
+}) satisfies z.ZodType<CheckResult>;
 
 /** accountKey ごとの既読 id。 */
 const seenIdsSchema = z.record(z.string(), z.array(z.string()));
@@ -56,7 +74,7 @@ async function loadValidated<T>(
 
 /** 前回のチェック結果を読む。未保存なら null。 */
 export function loadResult(): Promise<CheckResult | null> {
-  return loadValidated(chrome.storage.local, STORAGE_KEYS.result, checkResultSchema, 'result');
+  return loadValidated(chrome.storage.local, STORAGE_KEYS.result, storedCheckResultSchema, 'result');
 }
 
 export async function saveResult(result: CheckResult): Promise<void> {

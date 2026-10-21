@@ -11,6 +11,7 @@ startOptions({
     notificationsEnabled: getElement(document, 'notificationsEnabled', HTMLInputElement),
     gmailEnabled: getElement(document, 'gmailEnabled', HTMLInputElement),
     icloudEnabled: getElement(document, 'icloudEnabled', HTMLInputElement),
+    ignoreUnreachableAccounts: getElement(document, 'ignoreUnreachableAccounts', HTMLInputElement),
     status: getElement(document, 'status', HTMLElement),
   },
 }).catch((error) => {

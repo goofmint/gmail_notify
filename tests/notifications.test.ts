@@ -89,6 +89,7 @@ function group(accountKey: string, ids: string[], email: string | null = `${acco
     unreadCount: items.length,
     items,
     errorMessage: null,
+    errorKind: null,
   };
   return { account, items };
 }

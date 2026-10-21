@@ -78,6 +78,7 @@ function signedOut(): AccountState {
     unreadCount: 0,
     items: [],
     errorMessage: null,
+    errorKind: null,
   };
 }
 
@@ -118,6 +119,7 @@ describe('fetchIcloudState', () => {
         },
       ],
       errorMessage: null,
+      errorKind: null,
     } satisfies AccountState);
   });
 
@@ -207,6 +209,7 @@ describe('fetchIcloudState', () => {
       unreadCount: 0,
       items: [],
       errorMessage: 'HTTP 500',
+      errorKind: null,
     } satisfies AccountState);
   });
 
@@ -221,6 +224,7 @@ describe('fetchIcloudState', () => {
       unreadCount: 0,
       items: [],
       errorMessage: 'HTTP 500',
+      errorKind: null,
     } satisfies AccountState);
     expect(fetchMock).toHaveBeenCalledTimes(2);
   });
@@ -291,6 +295,7 @@ describe('fetchIcloudState', () => {
       unreadCount: 0,
       items: [],
       errorMessage: 'Failed to fetch',
+      errorKind: null,
     } satisfies AccountState);
   });
 

@@ -27,6 +27,7 @@ function resultWith(unreadCount: number): CheckResult {
           openUrl: OPEN_URL,
         })),
         errorMessage: null,
+        errorKind: null,
       },
     ],
   };

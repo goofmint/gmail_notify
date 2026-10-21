@@ -9,6 +9,7 @@ const STORED: Settings = {
   notificationsEnabled: false,
   gmailEnabled: true,
   icloudEnabled: false,
+  ignoreUnreachableAccounts: true,
 };
 
 type Deferred<T> = { promise: Promise<T>; resolve: (value: T) => void; reject: (error: Error) => void };
@@ -36,10 +37,19 @@ function createElements(): OptionsElements {
   const notificationsEnabled = checkbox('notificationsEnabled');
   const gmailEnabled = checkbox('gmailEnabled');
   const icloudEnabled = checkbox('icloudEnabled');
-  form.append(intervalMinutes, notificationsEnabled, gmailEnabled, icloudEnabled);
+  const ignoreUnreachableAccounts = checkbox('ignoreUnreachableAccounts');
+  form.append(intervalMinutes, notificationsEnabled, gmailEnabled, icloudEnabled, ignoreUnreachableAccounts);
   const status = document.createElement('p');
   document.body.replaceChildren(form, status);
-  return { form, intervalMinutes, notificationsEnabled, gmailEnabled, icloudEnabled, status };
+  return {
+    form,
+    intervalMinutes,
+    notificationsEnabled,
+    gmailEnabled,
+    icloudEnabled,
+    ignoreUnreachableAccounts,
+    status,
+  };
 }
 
 const loadSettings = vi.fn<() => Promise<Settings>>();
@@ -59,7 +69,13 @@ async function flush(): Promise<void> {
 }
 
 function controls(): (HTMLSelectElement | HTMLInputElement)[] {
-  return [elements.intervalMinutes, elements.notificationsEnabled, elements.gmailEnabled, elements.icloudEnabled];
+  return [
+    elements.intervalMinutes,
+    elements.notificationsEnabled,
+    elements.gmailEnabled,
+    elements.icloudEnabled,
+    elements.ignoreUnreachableAccounts,
+  ];
 }
 
 beforeEach(() => {
@@ -109,6 +125,7 @@ describe('startOptions', () => {
     expect(elements.notificationsEnabled.checked).toBe(false);
     expect(elements.gmailEnabled.checked).toBe(true);
     expect(elements.icloudEnabled.checked).toBe(false);
+    expect(elements.ignoreUnreachableAccounts.checked).toBe(true);
     expect(elements.status.textContent).toBe('');
   });
 
@@ -133,6 +150,15 @@ describe('startOptions', () => {
     change(elements.intervalMinutes);
     await flush();
     expect(saveSettings).toHaveBeenLastCalledWith({ ...STORED, icloudEnabled: true, intervalMinutes: 0.5 });
+  });
+
+  it('取得できないアカウントを無視する設定を変更したらフォーム全体を保存する', async () => {
+    await start();
+    elements.ignoreUnreachableAccounts.checked = false;
+    change(elements.ignoreUnreachableAccounts);
+    await flush();
+    expect(saveSettings).toHaveBeenCalledWith({ ...STORED, ignoreUnreachableAccounts: false });
+    expect(elements.status.textContent).toBe('保存しました');
   });
 
   it('保存に失敗したらエラーを表示し、入力値はそのまま残す', async () => {

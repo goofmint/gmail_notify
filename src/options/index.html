@@ -25,6 +25,13 @@
         <input id="icloudEnabled" name="icloudEnabled" type="checkbox" disabled />
         <span>iCloud メールを確認する</span>
       </label>
+      <label class="field">
+        <input id="ignoreUnreachableAccounts" name="ignoreUnreachableAccounts" type="checkbox" disabled />
+        <span>取得できないアカウントを無視する</span>
+      </label>
+      <p class="field-note">
+        「フィードを取得できませんでした」となる Gmail アカウントを、一覧とバッジの警告から外します。HTTP エラーなど、応答があった失敗は対象外です。
+      </p>
     </form>
     <p id="status" role="status"></p>
     <script type="module" src="./main.ts"></script>

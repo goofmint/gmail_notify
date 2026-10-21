@@ -80,6 +80,9 @@ type AccountState = {
   unreadCount: number;
   items: MailItem[];
   errorMessage: string | null;
+  // error の種類。status が error で、Gmail の fetch 呼び出し自体が Response を返さずに
+  // TypeError で失敗したときだけ 'unreachable'。それ以外は null（§6.1）。
+  errorKind: 'unreachable' | null;
 };
 
 type CheckResult = {
@@ -92,11 +95,12 @@ type Settings = {
   notificationsEnabled: boolean;
   gmailEnabled: boolean;
   icloudEnabled: boolean;
+  ignoreUnreachableAccounts: boolean; // errorKind が 'unreachable' のアカウントを結果から除く（§8.2）
 };
 ```
 
 ## 5. 定数（src/shared/constants.ts）
-- 既定の設定値: `DEFAULT_SETTINGS = { intervalMinutes: 1, notificationsEnabled: true, gmailEnabled: true, icloudEnabled: true }`
+- 既定の設定値: `DEFAULT_SETTINGS = { intervalMinutes: 1, notificationsEnabled: true, gmailEnabled: true, icloudEnabled: true, ignoreUnreachableAccounts: false }`
 - 上限値と最小値: `MIN_INTERVAL_MINUTES = 0.5`、`MAX_GMAIL_ACCOUNTS = 10`、`ICLOUD_MAX_RESULTS = 50`
 - URL:
   - `GMAIL_FEED_URL(n)`、`GMAIL_MESSAGE_URL(n, id)`、`GMAIL_LOGIN_URL`
@@ -118,8 +122,10 @@ fetchFeed(n): fetch(GMAIL_FEED_URL(n) + '?zx=' + rand,
 | 401、または最終 URL が accounts.google.com | signedOut |
 | 最終 URL の `/u/{m}/` が要求した n と違う（m ≠ n） | 存在しないアカウント。検出を打ち切る |
 | 上記以外の 2xx 以外 | error（`HTTP {status}`） |
-| fetch が TypeError で失敗（応答なし。ネットワークエラーや、権限のない URL への転送） | error。原因の候補を補ったメッセージにする |
+| fetch が TypeError で失敗（応答なし。ネットワークエラーや、権限のない URL への転送） | error（errorKind `unreachable`）。原因の候補を補ったメッセージにする |
 | 2xx | XML を gmailParser に渡す |
+
+errorKind を `unreachable` にするのは、`fetch` 呼び出し自体が TypeError で失敗した場合だけにする。`fetch` の呼び出しだけを内側の try/catch で囲んで判定する。応答を得たあとの失敗（HTTP エラー、本文の読み取りの TypeError、解析の失敗）と、タイムアウトなど TypeError 以外の失敗は errorKind `null` とし、原因の候補も補わない。判定は errorMessage の文字列ではなく errorKind で行う。
 
 ### 6.2 アカウント検出（discoverGmailAccounts）
 - n = 0 から `MAX_GMAIL_ACCOUNTS - 1` まで順に取得する。
@@ -162,6 +168,8 @@ fetchFeed(n): fetch(GMAIL_FEED_URL(n) + '?zx=' + rand,
     resourceTypes: ['xmlhttprequest'] } }
 ```
 注意: この modifyHeaders は送信する `Origin`/`Referer` ヘッダーを書き換えるだけで、fetch の実際の origin（`chrome-extension://...`）や initiator は変わらない。応答の `Access-Control-Allow-Origin` が書き換え後の値と一致しても、ブラウザの CORS 判定で応答が拒否される可能性がある。T3-4 のユニットテストでは検証できないため、T6-3 の実機テストで Service Worker から実際に validate、geqs/query、thread/search を fetch し、HTTP ステータスと `response.json()` の結果を確認する。あわせて DevTools の Network で各 POST に対応する `OPTIONS`（preflight）が発生しているかを確認し、発生している場合はその status と応答ヘッダー（`Access-Control-Allow-Origin`、`Access-Control-Allow-Credentials`、`Access-Control-Allow-Headers` に `content-type`、`Access-Control-Allow-Methods` に `POST`）を記録する。拒否される場合の代替方式は、同じ DNR の dynamic rule に `responseHeaders` の書き換えを追加し、`Access-Control-Allow-Origin` を拡張の origin（`chrome-extension://{id}`）に、`Access-Control-Allow-Credentials` を `true` に、さらに preflight 応答向けに `Access-Control-Allow-Headers` に `content-type` を、`Access-Control-Allow-Methods` に `POST` を設定する方法を第一候補とする（`Content-Type: application/json` は CORS セーフリスト外なので、CORS が適用される場合は `OPTIONS` の preflight が発生し、その応答に `Access-Control-Allow-Headers: content-type` が無いと本体の `POST` は送信されない）（`Cookie` は Fetch の禁止リクエストヘッダーなので、`chrome.cookies` で読んだ値を `fetch` のヘッダーに付ける方式は実装できない）。方式見直しの判断基準は、実機テストで 3 つのリクエストのいずれかが CORS エラー（`TypeError: Failed to fetch`）になることとする。
+
+実機テストの結果（2026-10-21、`.tmp/acceptance-results.md`）: この方式で iCloud の未読が一覧に表示され、ログアウト時は「ログインしてください」になった。CORS で拒否されなかったため、代替方式（responseHeaders の書き換え）は採用していない。
 
 ### 7.2 処理の流れ
 1. 事前チェック: `chrome.cookies.get({url:'https://www.icloud.com', name:'X-APPLE-WEBAUTH-USER'})` で Cookie を調べる。無ければ signedOut として終了する。
@@ -212,7 +220,8 @@ fetchFeed(n): fetch(GMAIL_FEED_URL(n) + '?zx=' + rand,
 
 ### 8.2 checker.ts の runCheck
 1. 設定を読む。
-2. 有効なプロバイダを `Promise.allSettled` で並列に実行する。一方が reject しても、もう一方の結果は使う。reject されたプロバイダは error 状態のアカウントにする。
+2. 有効なプロバイダを `Promise.allSettled` で並列に実行する。一方が reject しても、もう一方の結果は使う。reject されたプロバイダは error 状態のアカウントにする（errorKind は null）。
+   - 設定 `ignoreUnreachableAccounts` が ON なら、status が error で errorKind が `unreachable` のアカウントをここで除く。以降の差分計算、seenIds、保存、バッジ、通知には除いたあとの accounts を渡す。全件を除いた場合も、空の結果を保存してバッジを消す。除いたアカウントの seenIds は、手順 5 で前回の値が残る。
 3. 前回の seenIds（`Record<accountKey, string[]>`）を読む。
 4. diff.ts の `detectNewMail(prevSeen, accounts)` で新着を求める。
    - 前回の seenIds が存在しない（初回チェック）なら、新着は空にする。
@@ -220,7 +229,7 @@ fetchFeed(n): fetch(GMAIL_FEED_URL(n) + '?zx=' + rand,
    - それ以外は、今回の items のうち、前回の id 集合に無いものを新着とする。
 5. 次の seenIds を保存する。status が ok のアカウントは今回の id で上書きする。signedOut や error のアカウントは前回の値を残す。これは、復帰したときにまとめて通知が出るのを防ぐため。
 6. CheckResult を保存し、バッジを更新する。新着があり、通知が ON なら通知する。
-7. 同時に複数の runCheck が動かないよう、実行中の Promise を共有する。
+7. 同時に複数の runCheck が動かないよう、実行中の Promise を共有する。設定変更による呼び出し（`runCheck({ rerunIfInFlight: true })`）が実行中に重なったときは、実行中のチェックが変更前の設定を読んでいるため、完了後に最新の設定でもう一度チェックする。再チェックの完了まで同じ Promise で待つ。実行中のチェックが失敗したら予約は捨てる。
 
 ### 8.3 badge.ts
 - `setBadgeText`: 合計が 0 なら空文字。1000 以上なら `999+` と表示する。ただし合計が 0 で ok 以外のアカウントがあるときは `!` と表示する（空文字だとバッジが消えて警告色が見えないため、FR-1.3 を FR-1.2 より優先する）。
@@ -253,7 +262,7 @@ fetchFeed(n): fetch(GMAIL_FEED_URL(n) + '?zx=' + rand,
 - 幅は 400px 前後。日時は `Intl.DateTimeFormat` でブラウザのロケールに合わせて表示する。
 
 ## 10. 設定画面
-- 項目: チェック間隔（select で 0.5、1、2、5、10、15、30 分）、通知 ON/OFF、Gmail 有効、iCloud 有効
+- 項目: チェック間隔（select で 0.5、1、2、5、10、15、30 分）、通知 ON/OFF、Gmail 有効、iCloud 有効、取得できないアカウントを無視する（既定 OFF）
 - 変更したらすぐ `chrome.storage.sync.set` で保存し、「保存しました」と表示する。保存に失敗したらエラーを表示する。
 
 ## 11. manifest

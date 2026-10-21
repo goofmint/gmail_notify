@@ -23,6 +23,7 @@ function rejectedAccount(task: ProviderTask, errorMessage: string): AccountState
     unreadCount: 0,
     items: [],
     errorMessage,
+    errorKind: null,
   };
 }
 
@@ -42,6 +43,17 @@ async function collectAccounts(tasks: ProviderTask[]): Promise<AccountState[]> {
   });
 }
 
+/**
+ * 設定 ignoreUnreachableAccounts が ON のとき、応答が得られなかった error のアカウント（errorKind が unreachable）を除く。
+ * 除いたアカウントは保存結果・バッジ・通知のいずれにも渡らない。既知 id は nextSeenIds が前回の値を残す。
+ */
+function excludeIgnoredAccounts(accounts: AccountState[], ignoreUnreachable: boolean): AccountState[] {
+  if (!ignoreUnreachable) {
+    return accounts;
+  }
+  return accounts.filter((account) => !(account.status === 'error' && account.errorKind === 'unreachable'));
+}
+
 /** 1 回分のチェック（設計 §8.2）。 */
 async function check(): Promise<void> {
   const settings = await loadSettings();
@@ -52,7 +64,7 @@ async function check(): Promise<void> {
   if (settings.icloudEnabled) {
     tasks.push({ provider: 'icloud', accountKey: 'icloud', run: async () => [await fetchIcloudState()] });
   }
-  const accounts = await collectAccounts(tasks);
+  const accounts = excludeIgnoredAccounts(await collectAccounts(tasks), settings.ignoreUnreachableAccounts);
 
   const prevSeen = await loadSeenIds();
   const groups = detectNewMail(prevSeen, accounts);
@@ -64,16 +76,48 @@ async function check(): Promise<void> {
   }
 }
 
-/** メールをチェックする。実行中に呼ばれたら、実行中の Promise を返す。失敗は呼び出し元に伝える。 */
-export function runCheck(): Promise<void> {
+/** 実行中のチェックが完了したら、最新の設定でもう一度チェックするか。設定変更が実行中のチェックに追い越されないようにする。 */
+let rerunRequested = false;
+
+export type RunCheckOptions = {
+  /**
+   * 実行中なら、その完了後に最新の設定でもう一度チェックする。設定変更時に使う。
+   * 実行中のチェックは変更前の設定を読んでいるため、これが無いと変更が次の定期チェックまで反映されない。
+   */
+  rerunIfInFlight?: boolean;
+};
+
+/**
+ * メールをチェックする。実行中に呼ばれたら、実行中の Promise を返す。失敗は呼び出し元に伝える。
+ * rerunIfInFlight が指定されて実行中なら、完了後の再チェックを予約する。返す Promise は再チェックの完了まで待つ。
+ */
+export function runCheck(options: RunCheckOptions = {}): Promise<void> {
   if (inFlight !== null) {
+    if (options.rerunIfInFlight === true) {
+      rerunRequested = true;
+    }
     return inFlight;
   }
-  const current = check().finally(() => {
-    if (inFlight === current) {
-      inFlight = null;
-    }
-  });
+  const current = check()
+    .finally(() => {
+      if (inFlight === current) {
+        inFlight = null;
+      }
+    })
+    .then(
+      () => {
+        if (rerunRequested) {
+          rerunRequested = false;
+          return runCheck();
+        }
+        return undefined;
+      },
+      (error) => {
+        // 失敗したら予約は捨てる。次の定期チェックや手動更新で最新の設定が使われる。
+        rerunRequested = false;
+        throw error;
+      },
+    );
   inFlight = current;
   return current;
 }

@@ -22,6 +22,7 @@ export type OptionsElements = {
   notificationsEnabled: HTMLInputElement;
   gmailEnabled: HTMLInputElement;
   icloudEnabled: HTMLInputElement;
+  ignoreUnreachableAccounts: HTMLInputElement;
   status: HTMLElement;
 };
 
@@ -48,6 +49,7 @@ export async function startOptions(deps: OptionsDeps): Promise<void> {
     elements.notificationsEnabled,
     elements.gmailEnabled,
     elements.icloudEnabled,
+    elements.ignoreUnreachableAccounts,
   ];
   // 保存が重なったとき、最後に始めた保存の結果だけを表示する。
   let saveSeq = 0;
@@ -76,6 +78,7 @@ export async function startOptions(deps: OptionsDeps): Promise<void> {
       notificationsEnabled: elements.notificationsEnabled.checked,
       gmailEnabled: elements.gmailEnabled.checked,
       icloudEnabled: elements.icloudEnabled.checked,
+      ignoreUnreachableAccounts: elements.ignoreUnreachableAccounts.checked,
     };
   }
 
@@ -128,6 +131,7 @@ export async function startOptions(deps: OptionsDeps): Promise<void> {
   elements.notificationsEnabled.checked = settings.notificationsEnabled;
   elements.gmailEnabled.checked = settings.gmailEnabled;
   elements.icloudEnabled.checked = settings.icloudEnabled;
+  elements.ignoreUnreachableAccounts.checked = settings.ignoreUnreachableAccounts;
   if (findIntervalOption(settings.intervalMinutes) === undefined) {
     // 値を選択肢に寄せて保存し直すことはしない。未選択にして、ユーザーに選び直してもらう。
     elements.intervalMinutes.selectedIndex = -1;

@@ -51,7 +51,13 @@ vi.mock('../src/background/notifications', () => ({ handleNotificationClick: h.h
 
 await import('../src/background/index');
 
-const SETTINGS: Settings = { intervalMinutes: 5, notificationsEnabled: true, gmailEnabled: true, icloudEnabled: true };
+const SETTINGS: Settings = {
+  intervalMinutes: 5,
+  notificationsEnabled: true,
+  gmailEnabled: true,
+  icloudEnabled: true,
+  ignoreUnreachableAccounts: false,
+};
 const SENDER: chrome.runtime.MessageSender = { id: 'abcdefghijklmnopabcdefghijklmnop' };
 
 /** 登録されたリスナーが 1 つだけであることを確かめて返す。 */
@@ -177,6 +183,20 @@ describe('background index', () => {
     await vi.waitFor(() => expect(h.runCheck).toHaveBeenCalledTimes(1));
     expect(calls).toEqual(['createAlarm', 'runCheck']);
     expect(h.createAlarm).toHaveBeenCalledWith(ALARM_NAME, { periodInMinutes: 5, delayInMinutes: 5 });
+  });
+
+  it('取得できないアカウントを無視する設定が変わったら再チェックする', async () => {
+    only(h.listeners.onChanged)({ ignoreUnreachableAccounts: storageChange() }, 'sync');
+
+    await vi.waitFor(() => expect(h.runCheck).toHaveBeenCalledTimes(1));
+    expect(calls).toEqual(['createAlarm', 'runCheck']);
+  });
+
+  it('設定変更による再チェックは、実行中なら完了後の再実行を予約する', async () => {
+    only(h.listeners.onChanged)({ ignoreUnreachableAccounts: storageChange() }, 'sync');
+
+    await vi.waitFor(() => expect(h.runCheck).toHaveBeenCalledTimes(1));
+    expect(h.runCheck).toHaveBeenCalledWith({ rerunIfInFlight: true });
   });
 
   it('設定変更が連続しても、アラーム登録は順番に実行し最後に保存された間隔が反映される', async () => {

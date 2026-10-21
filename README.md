@@ -84,6 +84,7 @@ npm run dev
 - 新着メールを通知する（ON/OFF）
 - Gmail を確認する（ON/OFF）
 - iCloud メールを確認する（ON/OFF）
+- 取得できないアカウントを無視する（ON/OFF）: 既定は OFF です。対象は、Gmail で「フィードを取得できませんでした」と表示されるエラー（契約切れのアカウントなど、応答が得られない場合）だけです。ON にすると、該当するアカウントを一覧に表示せず、バッジの警告色と `!` の判定からも外します。`HTTP 500` などの HTTP エラーや、iCloud のエラーは対象外です。
 
 変更するとすぐに `chrome.storage.sync` に保存し、「保存しました」と表示します。保存すると、新しい間隔でチェックを登録し直し、その場で 1 回チェックします。
 
@@ -112,16 +113,16 @@ npm run dev
 ### 非公式な取得方法であること
 
 - Gmail は、ログイン済みセッション Cookie を使って Atom フィード（`https://mail.google.com/mail/u/{n}/feed/atom`）を取得します。Cookie を使ってこのフィードを利用する方法は、公式に文書化されていません。
-- iCloud は、icloud.com のログイン済みセッション Cookie を使って非公開の API を呼び出します。リクエストの内容と応答の形は公開されている実装に基づく推定で、実機ではまだ確認していません。
+- iCloud は、icloud.com のログイン済みセッション Cookie を使って非公開の API を呼び出します。リクエストの内容と応答の形は公開されている実装に基づく推定ですが、実機で未読の取得とログアウト時の判定が動作することを確認しています（2026-10-21）。
 - どちらも提供元の変更で、予告なく動かなくなる可能性があります。
 
 ### iCloud の CORS
 
-iCloud へのリクエストは、declarativeNetRequest で `Origin` と `Referer` を `https://www.icloud.com` に書き換えて送ります。この書き換えでは fetch の実際の origin（`chrome-extension://...`）は変わらないため、ブラウザの CORS の判定で応答が拒否される可能性があります。実機での確認は T6-3 で行います（`.tmp/design.md` §7.1）。
+iCloud へのリクエストは、declarativeNetRequest で `Origin` と `Referer` を `https://www.icloud.com` に書き換えて送ります。この書き換えでは fetch の実際の origin（`chrome-extension://...`）は変わりませんが、実機ではこの方式で応答が CORS で拒否されずに取得できることを確認しています（2026-10-21、`.tmp/design.md` §7.1）。iCloud 側の変更で拒否されるようになった場合の代替案は設計書に記載しています。
 
 ### サードパーティ Cookie のブロック
 
-Chrome の拡張機能のドキュメントには、ホスト権限を持つ拡張からのリクエストでの Cookie の扱いと、サードパーティ Cookie をブロックしたときの例外が記載されています。Chrome の設定やポリシー、Cookie の属性によっては、拡張からの fetch にセッション Cookie が送られない可能性があります。その場合、ログインしていても「ログインしてください」やエラーと表示されることが考えられます。この拡張での症状と対処は、実機では未確認です。
+Chrome の拡張機能のドキュメントには、ホスト権限を持つ拡張からのリクエストでの Cookie の扱いと、サードパーティ Cookie をブロックしたときの例外が記載されています。Chrome の設定やポリシー、Cookie の属性によっては、拡張からの fetch にセッション Cookie が送られない可能性があります。その場合、ログインしていても「ログインしてください」やエラーと表示されることが考えられます。既定の設定の Chrome では、ログイン済みの iCloud の未読を取得できることを実機で確認しています。
 
 - [Storage and cookies](https://developer.chrome.com/docs/extensions/develop/concepts/storage-and-cookies)
 - [Cross-origin network requests](https://developer.chrome.com/docs/extensions/develop/concepts/network-requests)

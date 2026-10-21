@@ -71,6 +71,9 @@
 - [x] T6-2 `README.md` にセットアップ手順、ビルド手順、読み込み手順、制約（非公式 API であること、サードパーティ Cookie のブロック）を書く。（完了。README の npm script と権限の一覧は `tests/readme.test.ts` で package.json と manifest に照合する）
 - [ ] T6-3 実機での受け入れテストをユーザーが行う（requirements §6 の 1〜5）。不具合があれば修正する。
 
+## Phase 7: 追加タスク
+- [x] T7-1 取得できない Gmail アカウントを無視する設定を追加する（Issue #62）。
+
 ## 依存関係
 - T0 → T1 → T2-1 → (T2-2〜T2-5 ∥ T3) → T4 → T5 → T6
 - T2-1 と T3-1 はどちらも `src/providers/schemas.ts` を変更するので、T3-1 は T2-1 の後に行う。それ以外の T2 と T3 は互いに独立しているので、並行して進められる。

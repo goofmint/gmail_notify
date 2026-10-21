@@ -95,7 +95,8 @@ chrome.storage.onChanged.addListener((changes, areaName) => {
   if (areaName !== 'sync' || !SETTINGS_KEYS.some((key) => Object.hasOwn(changes, key))) {
     return;
   }
-  report(scheduleAlarm().then(() => runCheck()));
+  // チェックの実行中に設定が変わったときは、完了後に最新の設定でもう一度チェックする。
+  report(scheduleAlarm().then(() => runCheck({ rerunIfInFlight: true })));
 });
 
 chrome.notifications.onClicked.addListener((notificationId) => {

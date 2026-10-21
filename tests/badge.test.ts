@@ -12,6 +12,7 @@ function account(accountKey: string, unreadCount: number, status: AccountStatus 
     unreadCount,
     items: [],
     errorMessage: status === 'error' ? '取得に失敗' : null,
+    errorKind: null,
   };
 }
 

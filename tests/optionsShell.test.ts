@@ -12,7 +12,7 @@ describe('設定画面の HTML', () => {
   it('フォームと各入力があり、読み込み前は無効にしている', () => {
     expect(html).toContain('<form id="settings-form">');
     expect(html).toMatch(/<select id="intervalMinutes"[^>]*disabled><\/select>/);
-    for (const id of ['notificationsEnabled', 'gmailEnabled', 'icloudEnabled']) {
+    for (const id of ['notificationsEnabled', 'gmailEnabled', 'icloudEnabled', 'ignoreUnreachableAccounts']) {
       expect(html).toMatch(new RegExp(`<input id="${id}"[^>]*type="checkbox" disabled />`));
     }
   });
