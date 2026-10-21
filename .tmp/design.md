@@ -169,6 +169,8 @@ errorKind を `unreachable` にするのは、`fetch` 呼び出し自体が Type
 ```
 注意: この modifyHeaders は送信する `Origin`/`Referer` ヘッダーを書き換えるだけで、fetch の実際の origin（`chrome-extension://...`）や initiator は変わらない。応答の `Access-Control-Allow-Origin` が書き換え後の値と一致しても、ブラウザの CORS 判定で応答が拒否される可能性がある。T3-4 のユニットテストでは検証できないため、T6-3 の実機テストで Service Worker から実際に validate、geqs/query、thread/search を fetch し、HTTP ステータスと `response.json()` の結果を確認する。あわせて DevTools の Network で各 POST に対応する `OPTIONS`（preflight）が発生しているかを確認し、発生している場合はその status と応答ヘッダー（`Access-Control-Allow-Origin`、`Access-Control-Allow-Credentials`、`Access-Control-Allow-Headers` に `content-type`、`Access-Control-Allow-Methods` に `POST`）を記録する。拒否される場合の代替方式は、同じ DNR の dynamic rule に `responseHeaders` の書き換えを追加し、`Access-Control-Allow-Origin` を拡張の origin（`chrome-extension://{id}`）に、`Access-Control-Allow-Credentials` を `true` に、さらに preflight 応答向けに `Access-Control-Allow-Headers` に `content-type` を、`Access-Control-Allow-Methods` に `POST` を設定する方法を第一候補とする（`Content-Type: application/json` は CORS セーフリスト外なので、CORS が適用される場合は `OPTIONS` の preflight が発生し、その応答に `Access-Control-Allow-Headers: content-type` が無いと本体の `POST` は送信されない）（`Cookie` は Fetch の禁止リクエストヘッダーなので、`chrome.cookies` で読んだ値を `fetch` のヘッダーに付ける方式は実装できない）。方式見直しの判断基準は、実機テストで 3 つのリクエストのいずれかが CORS エラー（`TypeError: Failed to fetch`）になることとする。
 
+実機テストの結果（2026-10-21、`.tmp/acceptance-results.md`）: この方式で iCloud の未読が一覧に表示され、ログアウト時は「ログインしてください」になった。CORS で拒否されなかったため、代替方式（responseHeaders の書き換え）は採用していない。
+
 ### 7.2 処理の流れ
 1. 事前チェック: `chrome.cookies.get({url:'https://www.icloud.com', name:'X-APPLE-WEBAUTH-USER'})` で Cookie を調べる。無ければ signedOut として終了する。
 2. `POST ICLOUD_VALIDATE_URL` を body `null` で送る。`ValidateSchema` で検証し、次の値を取り出す。
