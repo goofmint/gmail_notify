@@ -31,6 +31,7 @@ function account(overrides: Partial<AccountState> = {}): AccountState {
     unreadCount: 0,
     items: [],
     errorMessage: null,
+    errorKind: null,
     ...overrides,
   };
 }

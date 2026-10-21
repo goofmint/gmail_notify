@@ -24,6 +24,7 @@ const accountStateSchema = z.object({
   unreadCount: z.number().int().nonnegative(),
   items: z.array(mailItemSchema),
   errorMessage: z.string().nullable(),
+  errorKind: z.enum(['unreachable']).nullable(),
 }) satisfies z.ZodType<AccountState, AccountState>;
 
 export const checkResultSchema = z.object({

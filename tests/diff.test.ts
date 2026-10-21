@@ -24,6 +24,7 @@ function account(accountKey: string, ids: string[], status: AccountStatus = 'ok'
     unreadCount: ids.length,
     items: ids.map((id) => item(accountKey, id)),
     errorMessage: status === 'error' ? '取得に失敗' : null,
+    errorKind: null,
   };
 }
 

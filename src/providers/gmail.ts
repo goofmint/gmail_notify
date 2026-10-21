@@ -7,7 +7,7 @@ export type FeedFetchResult =
   | { kind: 'ok'; feed: GmailFeed }
   | { kind: 'signedOut' }
   | { kind: 'notFound' }
-  | { kind: 'error'; message: string };
+  | { kind: 'error'; errorKind: AccountState['errorKind']; message: string };
 
 const SIGN_IN_HOST = 'accounts.google.com';
 const ACCOUNT_PATH_PATTERN = /\/u\/(\d+)\//;
@@ -25,7 +25,7 @@ function judgeResponse(response: Response, n: number): FeedFetchResult | null {
     return { kind: 'notFound' };
   }
   if (!response.ok) {
-    return { kind: 'error', message: `HTTP ${response.status}` };
+    return { kind: 'error', errorKind: null, message: `HTTP ${response.status}` };
   }
   return null;
 }
@@ -34,28 +34,51 @@ function judgeResponse(response: Response, n: number): FeedFetchResult | null {
 export async function fetchFeed(n: number): Promise<FeedFetchResult> {
   try {
     // zx はキャッシュ回避用の乱数。signal は応答待ちと本文の読み取りの両方を期限で中断する。
-    const response = await fetch(`${GMAIL_FEED_URL(n)}?zx=${crypto.randomUUID()}`, {
+    const url = `${GMAIL_FEED_URL(n)}?zx=${crypto.randomUUID()}`;
+    const init: RequestInit = {
       credentials: 'include',
       cache: 'no-store',
       signal: AbortSignal.timeout(FETCH_TIMEOUT_MS),
-    });
+    };
+    let response: Response;
+    // fetch 呼び出しだけを囲む。応答を得たあとの TypeError（本文の読み取りなど）を unreachable にしないため。
+    try {
+      response = await fetch(url, init);
+    } catch (error) {
+      // TypeError は応答が得られなかったことしか分からないため、実機で確認した原因
+      // （契約切れのアカウントで権限のない URL に転送される）を候補として補って表示する。
+      if (error instanceof TypeError) {
+        return { kind: 'error', errorKind: 'unreachable', message: `${FETCH_FAILED_MESSAGE}: ${error.message}` };
+      }
+      throw error;
+    }
     const judged = judgeResponse(response, n);
     if (judged !== null) {
       return judged;
     }
     return { kind: 'ok', feed: parseGmailFeed(await response.text(), n) };
   } catch (error) {
-    // TypeError は応答が得られなかったことしか分からないため、実機で確認した原因
-    // （契約切れのアカウントで権限のない URL に転送される）を候補として補って表示する。
-    if (error instanceof TypeError) {
-      return { kind: 'error', message: `${FETCH_FAILED_MESSAGE}: ${error.message}` };
-    }
-    return { kind: 'error', message: error instanceof Error ? error.message : String(error) };
+    // タイムアウトなど TypeError 以外の fetch の失敗と、応答を得たあとの失敗は unreachable にしない。
+    return { kind: 'error', errorKind: null, message: error instanceof Error ? error.message : String(error) };
   }
 }
 
-function failedAccount(accountKey: string, status: 'signedOut' | 'error', message: string | null): AccountState {
-  return { provider: 'gmail', accountKey, email: null, status, unreadCount: 0, items: [], errorMessage: message };
+function failedAccount(
+  accountKey: string,
+  status: 'signedOut' | 'error',
+  message: string | null,
+  errorKind: AccountState['errorKind'],
+): AccountState {
+  return {
+    provider: 'gmail',
+    accountKey,
+    email: null,
+    status,
+    unreadCount: 0,
+    items: [],
+    errorMessage: message,
+    errorKind,
+  };
 }
 
 /**
@@ -76,11 +99,11 @@ export async function discoverGmailAccounts(): Promise<AccountState[]> {
       break;
     }
     if (result.kind === 'signedOut') {
-      accounts.push(failedAccount(accountKey, 'signedOut', null));
+      accounts.push(failedAccount(accountKey, 'signedOut', null, null));
       break;
     }
     if (result.kind === 'error') {
-      accounts.push(failedAccount(accountKey, 'error', result.message));
+      accounts.push(failedAccount(accountKey, 'error', result.message, result.errorKind));
       consecutiveErrors += 1;
       if (consecutiveErrors >= GMAIL_MAX_CONSECUTIVE_ERRORS) {
         break;
@@ -101,6 +124,7 @@ export async function discoverGmailAccounts(): Promise<AccountState[]> {
       unreadCount: result.feed.unreadCount,
       items: result.feed.items,
       errorMessage: null,
+      errorKind: null,
     });
   }
   return accounts;

@@ -56,6 +56,7 @@ function okAccount(accountKey: string, ids: string[]): AccountState {
     unreadCount: ids.length,
     items: ids.map((id) => item(accountKey, id)),
     errorMessage: null,
+    errorKind: null,
   };
 }
 
@@ -134,6 +135,7 @@ describe('runCheck', () => {
       unreadCount: 0,
       items: [],
       errorMessage: 'Gmail が落ちた',
+      errorKind: null,
     };
     const accounts = [gmailError, okAccount('icloud', ['t1', 't2'])];
     expect(mocks.saveResult).toHaveBeenCalledWith({ checkedAt: expect.any(String), accounts });
@@ -164,6 +166,7 @@ describe('runCheck', () => {
           unreadCount: 0,
           items: [],
           errorMessage: 'timeout',
+          errorKind: null,
         },
       ],
     });

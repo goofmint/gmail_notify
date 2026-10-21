@@ -120,7 +120,16 @@ async function postJson<T>(
 }
 
 function okState(email: string, unreadCount: number, items: MailItem[]): AccountState {
-  return { provider: 'icloud', accountKey: ACCOUNT_KEY, email, status: 'ok', unreadCount, items, errorMessage: null };
+  return {
+    provider: 'icloud',
+    accountKey: ACCOUNT_KEY,
+    email,
+    status: 'ok',
+    unreadCount,
+    items,
+    errorMessage: null,
+    errorKind: null,
+  };
 }
 
 function signedOutState(): AccountState {
@@ -132,6 +141,7 @@ function signedOutState(): AccountState {
     unreadCount: 0,
     items: [],
     errorMessage: null,
+    errorKind: null,
   };
 }
 
@@ -145,6 +155,7 @@ function errorState(email: string | null, message: string): AccountState {
     unreadCount: 0,
     items: [],
     errorMessage: message,
+    errorKind: null,
   };
 }
 

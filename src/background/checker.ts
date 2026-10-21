@@ -23,6 +23,7 @@ function rejectedAccount(task: ProviderTask, errorMessage: string): AccountState
     unreadCount: 0,
     items: [],
     errorMessage,
+    errorKind: null,
   };
 }
 

@@ -45,6 +45,7 @@ describe('types', () => {
       unreadCount: number;
       items: MailItem[];
       errorMessage: string | null;
+      errorKind: 'unreachable' | null;
     }>();
   });
 
@@ -57,6 +58,7 @@ describe('types', () => {
       unreadCount: 0,
       items: [],
       errorMessage: null,
+      errorKind: null,
     };
     expectTypeOf(signedOut).toEqualTypeOf<AccountState>();
   });
@@ -71,6 +73,7 @@ describe('types', () => {
       unreadCount: 0,
       items: [],
       errorMessage: null,
+      errorKind: null,
     };
     void invalid;
   });

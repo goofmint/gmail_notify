@@ -32,6 +32,11 @@ export type AccountState = {
   items: MailItem[];
   /** status が error のときの理由。それ以外は null。 */
   errorMessage: string | null;
+  /**
+   * error の種類。unreachable は、status が error で、Gmail のフィード取得の fetch 呼び出し自体が
+   * Response を返さずに TypeError で失敗した場合だけ。それ以外（応答を得たうえでの error、ok、signedOut）は null。
+   */
+  errorKind: 'unreachable' | null;
 };
 
 /** 1 回のチェック全体の結果。 */
