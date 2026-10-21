@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { discoverGmailAccounts, fetchFeed } from '../src/providers/gmail';
-import { GMAIL_FEED_URL } from '../src/shared/constants';
+import { GMAIL_FEED_URL, GMAIL_MAX_CONSECUTIVE_ERRORS } from '../src/shared/constants';
 
 type FetchInput = string | URL | Request;
 
@@ -125,9 +125,17 @@ describe('fetchFeed', () => {
     }
   });
 
-  it('fetch が失敗したらそのメッセージで error', async () => {
+  it('fetch が TypeError で失敗したら、原因の候補を補ったメッセージで error', async () => {
     stubFetch(() => Promise.reject(new TypeError('Failed to fetch')));
-    expect(await fetchFeed(0)).toEqual({ kind: 'error', message: 'Failed to fetch' });
+    expect(await fetchFeed(0)).toEqual({
+      kind: 'error',
+      message: 'フィードを取得できませんでした（ネットワークエラー、または権限のない URL への転送の可能性）: Failed to fetch',
+    });
+  });
+
+  it('fetch が TypeError 以外で失敗したらそのメッセージで error', async () => {
+    stubFetch(() => Promise.reject(new DOMException('signal timed out', 'TimeoutError')));
+    expect(await fetchFeed(0)).toEqual({ kind: 'error', message: 'signal timed out' });
   });
 });
 
@@ -193,39 +201,76 @@ describe('discoverGmailAccounts', () => {
     expect(fetchMock).toHaveBeenCalledTimes(10);
   });
 
-  it('500 なら error のアカウントを加えて打ち切り、それまでの結果は残す', async () => {
-    const fetchMock = stubFetch((n) => (n === 0 ? feedResponse(0, 'a@example.com', 0) : respond('', 500, GMAIL_FEED_URL(n))));
+  it('途中のアカウントが error でも打ち切らず、error として加えて次のアカウントを検出する（Issue #30）', async () => {
+    // 実機: /u/2/ が契約切れで "Failed to fetch" になり、/u/3/ が一覧に出なかった。
+    const fetchMock = stubFetch((n) => {
+      if (n === 2) {
+        return Promise.reject(new TypeError('Failed to fetch'));
+      }
+      if (n === 4) {
+        return respond('', 302, GMAIL_FEED_URL(0));
+      }
+      return feedResponse(n, `user${n}@example.com`, n);
+    });
     const accounts = await discoverGmailAccounts();
-    expect(accounts).toEqual([
-      expect.objectContaining({ accountKey: 'gmail:u/0', email: 'a@example.com', status: 'ok' }),
-      {
-        provider: 'gmail',
-        accountKey: 'gmail:u/1',
-        email: null,
-        status: 'error',
-        unreadCount: 0,
-        items: [],
-        errorMessage: 'HTTP 500',
-      },
+    expect(accounts.map((account) => [account.accountKey, account.status, account.email])).toEqual([
+      ['gmail:u/0', 'ok', 'user0@example.com'],
+      ['gmail:u/1', 'ok', 'user1@example.com'],
+      ['gmail:u/2', 'error', null],
+      ['gmail:u/3', 'ok', 'user3@example.com'],
+    ]);
+    expect(accounts[2]).toEqual({
+      provider: 'gmail',
+      accountKey: 'gmail:u/2',
+      email: null,
+      status: 'error',
+      unreadCount: 0,
+      items: [],
+      errorMessage: 'フィードを取得できませんでした（ネットワークエラー、または権限のない URL への転送の可能性）: Failed to fetch',
+    });
+    expect(fetchMock).toHaveBeenCalledTimes(5);
+  });
+
+  it('500 のアカウントは error として加え、次のアカウントの検出を続ける', async () => {
+    const fetchMock = stubFetch((n) => {
+      if (n === 1) {
+        return respond('', 500, GMAIL_FEED_URL(n));
+      }
+      return n <= 2 ? feedResponse(n, `user${n}@example.com`, 1) : respond('', 302, GMAIL_FEED_URL(0));
+    });
+    const accounts = await discoverGmailAccounts();
+    expect(accounts.map((account) => [account.accountKey, account.status, account.errorMessage])).toEqual([
+      ['gmail:u/0', 'ok', null],
+      ['gmail:u/1', 'error', 'HTTP 500'],
+      ['gmail:u/2', 'ok', null],
+    ]);
+    expect(fetchMock).toHaveBeenCalledTimes(4);
+  });
+
+  it('error が連続したら Gmail 全体に到達できないとみなして打ち切り、それまでの結果は残す', async () => {
+    expect(GMAIL_MAX_CONSECUTIVE_ERRORS).toBe(2);
+    const fetchMock = stubFetch(() => Promise.reject(new TypeError('Failed to fetch')));
+    const accounts = await discoverGmailAccounts();
+    expect(accounts.map((account) => [account.accountKey, account.status])).toEqual([
+      ['gmail:u/0', 'error'],
+      ['gmail:u/1', 'error'],
     ]);
     expect(fetchMock).toHaveBeenCalledTimes(2);
   });
 
-  it('fetch が失敗したら error のアカウントを加えて打ち切る', async () => {
-    const fetchMock = stubFetch(() => Promise.reject(new TypeError('Failed to fetch')));
+  it('ok を挟めば error の連続回数は数え直す', async () => {
+    const fetchMock = stubFetch((n) => {
+      if (n === 1 || n === 3) {
+        return Promise.reject(new TypeError('Failed to fetch'));
+      }
+      if (n === 4) {
+        return respond('', 302, GMAIL_FEED_URL(0));
+      }
+      return feedResponse(n, `user${n}@example.com`, 0);
+    });
     const accounts = await discoverGmailAccounts();
-    expect(accounts).toEqual([
-      {
-        provider: 'gmail',
-        accountKey: 'gmail:u/0',
-        email: null,
-        status: 'error',
-        unreadCount: 0,
-        items: [],
-        errorMessage: 'Failed to fetch',
-      },
-    ]);
-    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(accounts.map((account) => account.status)).toEqual(['ok', 'error', 'ok', 'error']);
+    expect(fetchMock).toHaveBeenCalledTimes(5);
   });
 
   it('n ≥ 1 が signedOut なら、そのアカウントを signedOut として加えて打ち切る', async () => {

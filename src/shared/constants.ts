@@ -16,6 +16,8 @@ export const INTERVAL_OPTIONS_MINUTES = [0.5, 1, 2, 5, 10, 15, 30] as const;
 export const FETCH_TIMEOUT_MS = 15_000;
 /** 検出する Gmail アカウントの上限。 */
 export const MAX_GMAIL_ACCOUNTS = 10;
+/** Gmail アカウント検出で、error が何件連続したら検出を打ち切るか（設計 §6.2）。 */
+export const GMAIL_MAX_CONSECUTIVE_ERRORS = 2;
 /** iCloud の thread/search で取得する件数。 */
 export const ICLOUD_MAX_RESULTS = 50;
 

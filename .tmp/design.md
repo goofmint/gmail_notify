@@ -118,6 +118,7 @@ fetchFeed(n): fetch(GMAIL_FEED_URL(n) + '?zx=' + rand,
 | 401、または最終 URL が accounts.google.com | signedOut |
 | 最終 URL の `/u/{m}/` が要求した n と違う（m ≠ n） | 存在しないアカウント。検出を打ち切る |
 | 上記以外の 2xx 以外 | error（`HTTP {status}`） |
+| fetch が TypeError で失敗（応答なし。ネットワークエラーや、権限のない URL への転送） | error。原因の候補を補ったメッセージにする |
 | 2xx | XML を gmailParser に渡す |
 
 ### 6.2 アカウント検出（discoverGmailAccounts）
@@ -126,6 +127,9 @@ fetchFeed(n): fetch(GMAIL_FEED_URL(n) + '?zx=' + rand,
   - 存在しないアカウントと判定された。
   - title が無い。
   - 既に見つかったメールアドレスと重複した。
+  - signedOut と判定された。
+  - error が `GMAIL_MAX_CONSECUTIVE_ERRORS`（2）件連続した。Gmail 全体に到達できない（ネットワーク障害など）とみなす。
+- error は 1 件では打ち切らない。そのアカウントを error として加え、次の番号に進む。実機で、契約切れのアカウント（/u/2/）が "Failed to fetch" になり、後ろのアカウント（/u/3/）が検出されない不具合があったため（Issue #30）。
 - 結果として `AccountState[]` を返す。
 - n = 0 が signedOut なら、Gmail 全体として signedOut のアカウントを 1 件返す（accountKey `gmail:u/0`、email null）。
 - アカウントの検出とフィードの取得は同じ処理で行い、毎回のチェックで全件取り直す。
