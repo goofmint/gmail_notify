@@ -129,7 +129,7 @@ describe('result', () => {
     await expect(loadResult()).rejects.toThrow(/result の形式が不正[\s\S]*accounts/);
   });
 
-  it('errorKind が無い旧形式の result は null で補わず、例外にする', async () => {
+  it('errorKind が無い旧形式（Issue #62 より前）の result は、errorKind を null として読む', async () => {
     local.items.result = {
       checkedAt: '2026-10-20T00:00:00.000Z',
       accounts: [
@@ -144,7 +144,48 @@ describe('result', () => {
         },
       ],
     };
+    expect(await loadResult()).toEqual({
+      checkedAt: '2026-10-20T00:00:00.000Z',
+      accounts: [
+        {
+          provider: 'icloud',
+          accountKey: 'icloud',
+          email: null,
+          status: 'signedOut',
+          unreadCount: 0,
+          items: [],
+          errorMessage: null,
+          errorKind: null,
+        },
+      ],
+    });
+  });
+
+  it('errorKind の値が不正なら旧形式として補わず、例外にする', async () => {
+    local.items.result = {
+      checkedAt: '2026-10-20T00:00:00.000Z',
+      accounts: [
+        {
+          provider: 'gmail',
+          accountKey: 'gmail:u/0',
+          email: null,
+          status: 'error',
+          unreadCount: 0,
+          items: [],
+          errorMessage: 'HTTP 500',
+          errorKind: 'timeout',
+        },
+      ],
+    };
     await expect(loadResult()).rejects.toThrow(/result の形式が不正[\s\S]*errorKind/);
+  });
+
+  it('旧形式でも他の項目が不正なら例外にする', async () => {
+    local.items.result = {
+      checkedAt: '2026-10-20T00:00:00.000Z',
+      accounts: [{ provider: 'gmail', accountKey: 'gmail:u/0', email: null, status: 'ok', unreadCount: -1, items: [], errorMessage: null }],
+    };
+    await expect(loadResult()).rejects.toThrow(/result の形式が不正[\s\S]*unreadCount/);
   });
 });
 
