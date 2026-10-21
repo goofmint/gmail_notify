@@ -1,4 +1,4 @@
-import { FETCH_TIMEOUT_MS, GMAIL_FEED_URL, MAX_GMAIL_ACCOUNTS } from '../shared/constants';
+import { FETCH_TIMEOUT_MS, GMAIL_FEED_URL, GMAIL_MAX_CONSECUTIVE_ERRORS, MAX_GMAIL_ACCOUNTS } from '../shared/constants';
 import type { AccountState } from '../shared/types';
 import { parseGmailFeed, type GmailFeed } from './gmailParser';
 
@@ -11,6 +11,7 @@ export type FeedFetchResult =
 
 const SIGN_IN_HOST = 'accounts.google.com';
 const ACCOUNT_PATH_PATTERN = /\/u\/(\d+)\//;
+const FETCH_FAILED_MESSAGE = 'フィードを取得できませんでした（ネットワークエラー、または権限のない URL への転送の可能性）';
 
 /** 最終 URL と状態コードから判定する。2xx なら null を返し、本文の解析に進む。 */
 function judgeResponse(response: Response, n: number): FeedFetchResult | null {
@@ -44,6 +45,11 @@ export async function fetchFeed(n: number): Promise<FeedFetchResult> {
     }
     return { kind: 'ok', feed: parseGmailFeed(await response.text(), n) };
   } catch (error) {
+    // TypeError は応答が得られなかったことしか分からないため、実機で確認した原因
+    // （契約切れのアカウントで権限のない URL に転送される）を候補として補って表示する。
+    if (error instanceof TypeError) {
+      return { kind: 'error', message: `${FETCH_FAILED_MESSAGE}: ${error.message}` };
+    }
     return { kind: 'error', message: error instanceof Error ? error.message : String(error) };
   }
 }
@@ -54,11 +60,15 @@ function failedAccount(accountKey: string, status: 'signedOut' | 'error', messag
 
 /**
  * u/0 から順にフィードを取得し、Gmail アカウントを検出する（設計 §6.2）。
- * 存在しないアカウント、メールアドレスの重複、signedOut、error のいずれかで打ち切る。打ち切る前の結果は残す。
+ * 存在しないアカウント、メールアドレスの重複、signedOut のいずれかで打ち切る。打ち切る前の結果は残す。
+ * error は打ち切らず、そのアカウントを error として加えて次の番号に進む。途中の 1 アカウントだけが
+ * 取得できない場合（実機で確認した契約切れのアカウント）に、後ろのアカウントが隠れないようにするため。
+ * ただし error が GMAIL_MAX_CONSECUTIVE_ERRORS 件連続したら、Gmail 全体に到達できないとみなして打ち切る。
  */
 export async function discoverGmailAccounts(): Promise<AccountState[]> {
   const accounts: AccountState[] = [];
   const seenEmails = new Set<string>();
+  let consecutiveErrors = 0;
   for (let n = 0; n < MAX_GMAIL_ACCOUNTS; n++) {
     const accountKey = `gmail:u/${n}`;
     const result = await fetchFeed(n);
@@ -71,8 +81,13 @@ export async function discoverGmailAccounts(): Promise<AccountState[]> {
     }
     if (result.kind === 'error') {
       accounts.push(failedAccount(accountKey, 'error', result.message));
-      break;
+      consecutiveErrors += 1;
+      if (consecutiveErrors >= GMAIL_MAX_CONSECUTIVE_ERRORS) {
+        break;
+      }
+      continue;
     }
+    consecutiveErrors = 0;
     const normalized = result.feed.email.trim().toLowerCase();
     if (seenEmails.has(normalized)) {
       break;
