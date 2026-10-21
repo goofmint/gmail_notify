@@ -26,7 +26,13 @@ vi.mock('../src/shared/storage', () => ({
 vi.mock('../src/background/badge', () => ({ updateBadge: mocks.updateBadge }));
 vi.mock('../src/background/notifications', () => ({ notifyNewMail: mocks.notifyNewMail }));
 
-const SETTINGS: Settings = { intervalMinutes: 1, notificationsEnabled: true, gmailEnabled: true, icloudEnabled: true };
+const SETTINGS: Settings = {
+  intervalMinutes: 1,
+  notificationsEnabled: true,
+  gmailEnabled: true,
+  icloudEnabled: true,
+  ignoreUnreachableAccounts: false,
+};
 
 function item(accountKey: string, id: string): MailItem {
   return {

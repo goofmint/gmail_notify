@@ -48,6 +48,8 @@ export type Settings = {
   notificationsEnabled: boolean;
   gmailEnabled: boolean;
   icloudEnabled: boolean;
+  /** Gmail のフィード取得で応答が得られなかったアカウント（AccountState.errorKind が unreachable）を結果から除く。 */
+  ignoreUnreachableAccounts: boolean;
 };
 
 /** accountKey ごとの、前回までに見た MailItem.id。初回（未保存）は SeenIds ではなく null で表す。 */

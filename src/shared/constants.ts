@@ -6,6 +6,7 @@ export const DEFAULT_SETTINGS: Settings = {
   notificationsEnabled: true,
   gmailEnabled: true,
   icloudEnabled: true,
+  ignoreUnreachableAccounts: false,
 };
 
 /** チェック間隔の最小値（分）。 */

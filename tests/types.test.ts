@@ -85,6 +85,7 @@ describe('types', () => {
       notificationsEnabled: boolean;
       gmailEnabled: boolean;
       icloudEnabled: boolean;
+      ignoreUnreachableAccounts: boolean;
     }>();
   });
 

@@ -9,6 +9,7 @@ const settingsSchema = z.object({
   notificationsEnabled: z.boolean(),
   gmailEnabled: z.boolean(),
   icloudEnabled: z.boolean(),
+  ignoreUnreachableAccounts: z.boolean(),
 }) satisfies z.ZodType<Settings, Settings>;
 
 /** chrome.storage.sync から設定を読む。未保存の項目は DEFAULT_SETTINGS で補われる（chrome API の仕様）。 */

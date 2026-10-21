@@ -51,6 +51,7 @@ describe('DEFAULT_SETTINGS', () => {
       notificationsEnabled: true,
       gmailEnabled: true,
       icloudEnabled: true,
+      ignoreUnreachableAccounts: false,
     });
     expect(DEFAULT_SETTINGS.intervalMinutes).toBeGreaterThanOrEqual(MIN_INTERVAL_MINUTES);
   });
