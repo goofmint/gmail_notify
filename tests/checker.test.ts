@@ -172,6 +172,91 @@ describe('runCheck', () => {
     });
   });
 
+  describe('取得できないアカウントを無視する設定', () => {
+    const unreachable: AccountState = {
+      provider: 'gmail',
+      accountKey: 'gmail:u/2',
+      email: null,
+      status: 'error',
+      unreadCount: 0,
+      items: [],
+      errorMessage: 'フィードを取得できませんでした: Failed to fetch',
+      errorKind: 'unreachable',
+    };
+    const httpError: AccountState = {
+      ...unreachable,
+      accountKey: 'gmail:u/3',
+      errorMessage: 'HTTP 500',
+      errorKind: null,
+    };
+    const signedOut: AccountState = {
+      ...unreachable,
+      accountKey: 'gmail:u/4',
+      status: 'signedOut',
+      errorMessage: null,
+      errorKind: null,
+    };
+
+    it('ON なら unreachable のアカウントを保存結果とバッジから除き、ok のアカウントは残す', async () => {
+      mocks.loadSettings.mockResolvedValue({ ...SETTINGS, ignoreUnreachableAccounts: true });
+      const gmail0Empty = okAccount('gmail:u/0', []);
+      mocks.discoverGmailAccounts.mockResolvedValue([gmail0Empty, unreachable]);
+      mocks.fetchIcloudState.mockResolvedValue(okAccount('icloud', []));
+
+      await runCheck();
+
+      const accounts = [gmail0Empty, okAccount('icloud', [])];
+      expect(mocks.saveResult).toHaveBeenCalledWith({ checkedAt: expect.any(String), accounts });
+      // 残るのは未読 0 の ok だけなので、バッジは警告にならない。
+      expect(mocks.updateBadge).toHaveBeenCalledWith(accounts);
+    });
+
+    it('OFF（既定）なら unreachable のアカウントも従来どおり保存結果とバッジに含める', async () => {
+      mocks.discoverGmailAccounts.mockResolvedValue([gmail0, unreachable]);
+
+      await runCheck();
+
+      const accounts = [gmail0, unreachable, icloud];
+      expect(mocks.saveResult).toHaveBeenCalledWith({ checkedAt: expect.any(String), accounts });
+      expect(mocks.updateBadge).toHaveBeenCalledWith(accounts);
+    });
+
+    it('ON でも errorKind が null の error、signedOut、reject されたプロバイダの error は除かない', async () => {
+      mocks.loadSettings.mockResolvedValue({ ...SETTINGS, ignoreUnreachableAccounts: true });
+      mocks.discoverGmailAccounts.mockResolvedValue([httpError, signedOut]);
+      mocks.fetchIcloudState.mockRejectedValue(new TypeError('Failed to fetch'));
+
+      await runCheck();
+
+      const icloudError: AccountState = {
+        provider: 'icloud',
+        accountKey: 'icloud',
+        email: null,
+        status: 'error',
+        unreadCount: 0,
+        items: [],
+        errorMessage: 'Failed to fetch',
+        errorKind: null,
+      };
+      const accounts = [httpError, signedOut, icloudError];
+      expect(mocks.saveResult).toHaveBeenCalledWith({ checkedAt: expect.any(String), accounts });
+      expect(mocks.updateBadge).toHaveBeenCalledWith(accounts);
+    });
+
+    it('ON で全件を除いたら空の結果を保存してバッジを消し、既知 id は前回の値を残して通知しない', async () => {
+      mocks.loadSettings.mockResolvedValue({ ...SETTINGS, ignoreUnreachableAccounts: true, icloudEnabled: false });
+      mocks.discoverGmailAccounts.mockResolvedValue([unreachable, { ...unreachable, accountKey: 'gmail:u/3' }]);
+      mocks.loadSeenIds.mockResolvedValue({ 'gmail:u/2': ['p'], 'gmail:u/3': ['q'] });
+
+      await runCheck();
+
+      expect(mocks.saveResult).toHaveBeenCalledWith({ checkedAt: expect.any(String), accounts: [] });
+      expect(mocks.updateBadge).toHaveBeenCalledWith([]);
+      expect(mocks.saveSeenIds).toHaveBeenCalledWith({ 'gmail:u/2': ['p'], 'gmail:u/3': ['q'] });
+      expect(mocks.notifyNewMail).not.toHaveBeenCalled();
+    });
+  });
+
   it('無効なプロバイダは実行しない', async () => {
     mocks.loadSettings.mockResolvedValue({ ...SETTINGS, icloudEnabled: false });
 

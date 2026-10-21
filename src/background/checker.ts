@@ -43,6 +43,17 @@ async function collectAccounts(tasks: ProviderTask[]): Promise<AccountState[]> {
   });
 }
 
+/**
+ * 設定 ignoreUnreachableAccounts が ON のとき、応答が得られなかった error のアカウント（errorKind が unreachable）を除く。
+ * 除いたアカウントは保存結果・バッジ・通知のいずれにも渡らない。既知 id は nextSeenIds が前回の値を残す。
+ */
+function excludeIgnoredAccounts(accounts: AccountState[], ignoreUnreachable: boolean): AccountState[] {
+  if (!ignoreUnreachable) {
+    return accounts;
+  }
+  return accounts.filter((account) => !(account.status === 'error' && account.errorKind === 'unreachable'));
+}
+
 /** 1 回分のチェック（設計 §8.2）。 */
 async function check(): Promise<void> {
   const settings = await loadSettings();
@@ -53,7 +64,7 @@ async function check(): Promise<void> {
   if (settings.icloudEnabled) {
     tasks.push({ provider: 'icloud', accountKey: 'icloud', run: async () => [await fetchIcloudState()] });
   }
-  const accounts = await collectAccounts(tasks);
+  const accounts = excludeIgnoredAccounts(await collectAccounts(tasks), settings.ignoreUnreachableAccounts);
 
   const prevSeen = await loadSeenIds();
   const groups = detectNewMail(prevSeen, accounts);
