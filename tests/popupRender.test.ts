@@ -44,6 +44,7 @@ let container: HTMLElement;
 const onOpenUrl = vi.fn<(url: string) => void>();
 
 beforeEach(() => {
+  onOpenUrl.mockClear();
   document.body.replaceChildren();
   container = document.createElement('main');
   document.body.append(container);
@@ -116,6 +117,31 @@ describe('renderAccounts', () => {
   it('iCloud のアイコンは iCloud と表示する', () => {
     renderAccounts(container, result([account({ provider: 'icloud', accountKey: 'icloud' })]), onOpenUrl);
     expect(firstSection().querySelector('h2 .badge')?.textContent).toBe('iCloud');
+  });
+
+  it.each([
+    ['gmail', 'gmail:u/2', 'https://mail.google.com/mail/u/2/#inbox'],
+    ['icloud', 'icloud', ICLOUD_MAIL_URL],
+  ] as const)('未読 0 件でもメールアドレスは（%s）トップページへのリンクになる', (provider, accountKey, url) => {
+    renderAccounts(container, result([account({ provider, accountKey, unreadCount: 0 })]), onOpenUrl);
+    const email = firstSection().querySelector('h2 .email');
+    expect(email?.tagName).toBe('A');
+    expect(email?.getAttribute('href')).toBe(url);
+  });
+
+  it('メールアドレスのクリックで、既定の遷移を止めて openUrl を 1 回だけ渡す', () => {
+    renderAccounts(container, result([account({ accountKey: 'gmail:u/2' })]), onOpenUrl);
+    const event = new MouseEvent('click', { bubbles: true, cancelable: true });
+    firstSection().querySelector('h2 .email')?.dispatchEvent(event);
+    expect(event.defaultPrevented).toBe(true);
+    expect(onOpenUrl.mock.calls).toEqual([['https://mail.google.com/mail/u/2/#inbox']]);
+  });
+
+  it('error でもメールアドレスはリンクになる', () => {
+    renderAccounts(container, result([account({ status: 'error', errorMessage: '失敗' })]), onOpenUrl);
+    const email = firstSection().querySelector('h2 .email');
+    expect(email?.tagName).toBe('A');
+    expect(email?.getAttribute('href')).toBe('https://mail.google.com/mail/u/0/#inbox');
   });
 
   it('メールアドレスが null なら要素を出さない', () => {

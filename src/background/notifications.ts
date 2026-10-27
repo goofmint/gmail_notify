@@ -1,6 +1,5 @@
-import { GMAIL_INBOX_URL, ICLOUD_MAIL_URL } from '../shared/constants';
+import { accountHomeUrl } from '../shared/accountUrl';
 import { loadNotificationUrl, removeNotificationUrl, saveNotificationUrl } from '../shared/storage';
-import type { AccountState } from '../shared/types';
 import type { NewMailGroup } from './diff';
 
 /** 通知に使う拡張のアイコン（128px）。manifest の icons と同じパス。 */
@@ -12,25 +11,6 @@ export type BuiltNotification = {
   options: chrome.notifications.NotificationCreateOptions;
   url: string;
 };
-
-/** Gmail の accountKey `gmail:u/{n}` から n を取り出す。形式が違えば例外。 */
-function gmailAccountIndex(accountKey: string): number {
-  const match = /^gmail:u\/(\d+)$/.exec(accountKey);
-  if (match === null) {
-    throw new Error(`Gmail の accountKey の形式が不正: ${accountKey}`);
-  }
-  return Number(match[1]);
-}
-
-/** 複数件の新着のときに開く、アカウントの受信トレイ。 */
-function inboxUrl(account: AccountState): string {
-  switch (account.provider) {
-    case 'gmail':
-      return GMAIL_INBOX_URL(gmailAccountIndex(account.accountKey));
-    case 'icloud':
-      return ICLOUD_MAIL_URL;
-  }
-}
 
 /** 1 アカウント分の新着から通知を組み立てる（設計 §8.4）。now は notificationId に使う時刻（ミリ秒）。 */
 export function buildNotification(group: NewMailGroup, now: number): BuiltNotification {
@@ -53,7 +33,7 @@ export function buildNotification(group: NewMailGroup, now: number): BuiltNotifi
       message: first.subject,
       contextMessage: account.email,
     },
-    url: single ? first.openUrl : inboxUrl(account),
+    url: single ? first.openUrl : accountHomeUrl(account),
   };
 }
 

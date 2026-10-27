@@ -113,6 +113,15 @@ main > p {
   white-space: nowrap;
 }
 
+.account h2 a.email {
+  color: inherit;
+  cursor: pointer;
+}
+
+.account h2 a.email:focus-visible {
+  outline: 2px solid var(--color-accent);
+}
+
 .account h2 .count {
   margin-left: auto;
 }

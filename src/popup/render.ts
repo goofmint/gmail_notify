@@ -1,3 +1,4 @@
+import { accountHomeUrl } from '../shared/accountUrl';
 import { GMAIL_LOGIN_URL, ICLOUD_MAIL_URL } from '../shared/constants';
 import type { AccountState, CheckResult, MailItem, Provider } from '../shared/types';
 
@@ -55,11 +56,19 @@ export function renderHeader(root: { total: HTMLElement; checkedAt: HTMLElement 
   root.checkedAt.textContent = formatDate(result.checkedAt);
 }
 
-function renderHeading(doc: Document, account: AccountState): HTMLHeadingElement {
+function renderHeading(doc: Document, account: AccountState, onOpenUrl: (url: string) => void): HTMLHeadingElement {
   const heading = doc.createElement('h2');
   heading.append(textElement(doc, 'span', 'badge', PROVIDER_LABELS[account.provider]));
   if (account.email !== null) {
-    heading.append(textElement(doc, 'span', 'email', account.email));
+    // アカウント名は、そのアカウントのトップページを開くリンクにする。どの status でも開ける。
+    const homeUrl = accountHomeUrl(account);
+    const link = textElement(doc, 'a', 'email', account.email);
+    link.href = homeUrl;
+    link.addEventListener('click', (event) => {
+      event.preventDefault();
+      onOpenUrl(homeUrl);
+    });
+    heading.append(link);
   }
   heading.append(textElement(doc, 'span', 'count', String(account.unreadCount)));
   return heading;
@@ -140,7 +149,7 @@ export function renderAccounts(
   for (const account of result.accounts) {
     const section = doc.createElement('section');
     section.className = `account status-${account.status}`;
-    section.append(renderHeading(doc, account), ...renderBody(doc, account, onOpenUrl));
+    section.append(renderHeading(doc, account, onOpenUrl), ...renderBody(doc, account, onOpenUrl));
     container.append(section);
   }
 }
