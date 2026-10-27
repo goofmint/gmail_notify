@@ -115,12 +115,7 @@ main > p {
 
 .account h2 a.email {
   color: inherit;
-  text-decoration: none;
   cursor: pointer;
-}
-
-.account h2 a.email:hover {
-  text-decoration: underline;
 }
 
 .account h2 a.email:focus-visible {
